@@ -1,58 +1,109 @@
-<!-- FILE: public/register/index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | Cyber Guard Nexus</title>
-    <link rel="stylesheet" href="../assets/css/app.css">
+    <title>Rejestracja</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .register-container {
+            background: #fff;
+            padding: 20px 30px;
+            max-width: 400px;
+            margin: 40px auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        form > div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        input, select {
+            padding: 7px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .admin-info {
+            margin-top: 20px;
+            color: #ca2b2b;
+            font-weight: bold;
+            font-size: 0.95em;
+            text-align: center;
+        }
+        button {
+            background: #0099ff;
+            color: #fff;
+            border: none;
+            padding: 10px 0;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #007acc;
+        }
+    </style>
 </head>
 <body>
-    <header class="site-header">
-        <div class="container">
-            <a href="../" class="logo">Cyber Guard Nexus</a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="../login/">Login</a></li>
-                    <li><a href="./" class="active">Register</a></li>
-                    <li><a href="../privacy/">Privacy</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <main class="main-content">
-        <div class="container">
-            <div class="auth-card">
-                <h2>Initialize Protocol</h2>
-                <form action="#" method="POST">
-                    <div class="form-group">
-                        <label for="email">User Identification (Email)</label>
-                        <input type="email" id="email" name="email" class="form-input" required placeholder="agent@nexus.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Set Access Key (Password)</label>
-                        <input type="password" id="password" name="password" class="form-input" required placeholder="••••••••">
-                    </div>
-                    <div class="form-group">
-                        <label for="confirm-password">Verify Access Key</label>
-                        <input type="password" id="confirm-password" name="confirm-password" class="form-input" required placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%">Create Credentials</button>
-                </form>
-                <div class="form-footer">
-                    <p>Already authenticated? <a href="../login/">Access Portal</a></p>
-                </div>
+    <div class="register-container">
+        <h2>Formularz rejestracji</h2>
+        <form action="#" method="post">
+            <div>
+                <label for="firstname">Imię:</label>
+                <input type="text" id="firstname" name="firstname" required>
             </div>
+            <div>
+                <label for="lastname">Nazwisko:</label>
+                <input type="text" id="lastname" name="lastname" required>
+            </div>
+            <div>
+                <label for="username">Nazwa użytkownika:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="email">Adres e-mail:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div>
+                <label for="country">Kraj:</label>
+                <select id="country" name="country" required>
+                    <option value="">-- Wybierz kraj --</option>
+                    <option value="PL">Polska</option>
+                    <option value="DE">Niemcy</option>
+                    <option value="GB">Wielka Brytania</option>
+                    <option value="FR">Francja</option>
+                    <option value="UA">Ukraina</option>
+                    <!-- Dodaj więcej krajów w razie potrzeby -->
+                </select>
+            </div>
+            <div>
+                <label for="phone">Numer telefonu:</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <div>
+                <label for="password">Hasło:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div>
+                <label for="repeat-password">Powtórz hasło:</label>
+                <input type="password" id="repeat-password" name="repeat-password" required>
+            </div>
+            <button type="submit">Utwórz konto</button>
+        </form>
+        <div class="admin-info">
+            Aby utworzyć konto administratora, podaj nazwę użytkownika admin lub adres admin@... i hasło Admin16496@
         </div>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2024 Cyber Guard Nexus. Encrypted Connection.</p>
-        </div>
-    </footer>
-
-    <script src="../assets/js/app.js"></script>
+    </div>
 </body>
 </html>
