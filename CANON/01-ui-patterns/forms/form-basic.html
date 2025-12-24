@@ -1,0 +1,260 @@
+<!-- Neutralized Form Component - Basic -->
+<!-- Source: Legal-Buddy-AI (adapted, client-side validation only, no backend) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-group.error input,
+        .form-group.error select,
+        .form-group.error textarea {
+            border-color: #e74c3c;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .success-message {
+            background: #2ecc71;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="success-message" id="successMessage">
+            Form submitted successfully!
+        </div>
+
+        <h1>Contact Form</h1>
+        <form id="contactForm" novalidate>
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" required>
+                <span class="error-message">Please enter your name</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required>
+                <span class="error-message">Please enter a valid email</span>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone">
+                <span class="error-message">Please enter a valid phone number</span>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <select id="category" name="category" required>
+                    <option value="">Select a category</option>
+                    <option value="general">General Inquiry</option>
+                    <option value="support">Support</option>
+                    <option value="feedback">Feedback</option>
+                    <option value="other">Other</option>
+                </select>
+                <span class="error-message">Please select a category</span>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Message *</label>
+                <textarea id="message" name="message" required></textarea>
+                <span class="error-message">Please enter your message</span>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="terms" name="terms" required>
+                <label for="terms">I agree to the terms and conditions *</label>
+            </div>
+            <div class="form-group error" style="margin-left: 1.5rem;">
+                <span class="error-message">You must accept the terms</span>
+            </div>
+
+            <button type="submit" class="btn">Submit Form</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('contactForm');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Clear previous errors
+            document.querySelectorAll('.form-group').forEach(group => {
+                group.classList.remove('error');
+            });
+
+            let isValid = true;
+
+            // Validate name
+            const name = document.getElementById('name');
+            if (!name.value.trim()) {
+                name.closest('.form-group').classList.add('error');
+                isValid = false;
+            }
+
+            // Validate email
+            const email = document.getElementById('email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email.value.trim() || !emailRegex.test(email.value)) {
+                email.closest('.form-group').classList.add('error');
+                isValid = false;
+            }
+
+            // Validate category
+            const category = document.getElementById('category');
+            if (!category.value) {
+                category.closest('.form-group').classList.add('error');
+                isValid = false;
+            }
+
+            // Validate message
+            const message = document.getElementById('message');
+            if (!message.value.trim()) {
+                message.closest('.form-group').classList.add('error');
+                isValid = false;
+            }
+
+            // Validate terms
+            const terms = document.getElementById('terms');
+            if (!terms.checked) {
+                terms.closest('.form-group').nextElementSibling.classList.add('error');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Show success message
+                const successMsg = document.getElementById('successMessage');
+                successMsg.style.display = 'block';
+                
+                // Log form data (replace with actual submission)
+                console.log('Form Data:', {
+                    name: name.value,
+                    email: email.value,
+                    phone: document.getElementById('phone').value,
+                    category: category.value,
+                    message: message.value
+                });
+
+                // Reset form
+                form.reset();
+
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
