@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<!-- Advanced Leaflet + OpenStreetMap Demo -->
+<!-- Source: Legal-Buddy-AI (adapted, standalone, no backend) -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Leaflet Example</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .control-panel h3 {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .control-group button {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .control-group button:hover {
+            background: #2980b9;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .zoom-display {
+            text-align: center;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .custom-popup {
+            font-family: Arial, sans-serif;
+        }
+
+        .custom-popup h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .custom-popup p {
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="control-panel">
+        <h3>Map Controls</h3>
+        
+        <div class="control-group">
+            <label>Quick Actions</label>
+            <button onclick="addRandomMarker()">Add Random Marker</button>
+            <button onclick="clearMarkers()">Clear All Markers</button>
+            <button onclick="fitAllMarkers()">Fit View to Markers</button>
+        </div>
+
+        <div class="control-group">
+            <label>Zoom Level: <span class="zoom-display" id="zoomLevel">13</span></label>
+            <input type="range" min="1" max="18" value="13" id="zoomSlider">
+        </div>
+
+        <div class="control-group">
+            <button onclick="toggleLayerControl()">Toggle Layers</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([51.505, -0.09], 13);
+
+        // Define different tile layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        });
+
+        const osmHotLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors, Tiles by Humanitarian OSM Team',
+            maxZoom: 19
+        });
+
+        const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+            maxZoom: 17
+        });
+
+        // Add default layer
+        osmLayer.addTo(map);
+
+        // Layer control
+        const baseMaps = {
+            "OpenStreetMap": osmLayer,
+            "OSM Humanitarian": osmHotLayer,
+            "Topographic": topoLayer
+        };
+
+        let layerControl = L.control.layers(baseMaps).addTo(map);
+        let showingLayers = true;
+
+        // Store markers for management
+        let markers = [];
+
+        // Add some initial points of interest
+        const poi = [
+            { lat: 51.505, lng: -0.09, name: "Location 1", desc: "Primary marker" },
+            { lat: 51.51, lng: -0.1, name: "Location 2", desc: "Secondary marker" },
+            { lat: 51.49, lng: -0.08, name: "Location 3", desc: "Tertiary marker" }
+        ];
+
+        poi.forEach(point => {
+            const marker = L.marker([point.lat, point.lng]).addTo(map);
+            const popupContent = `
+                <div class="custom-popup">
+                    <h4>${point.name}</h4>
+                    <p><strong>Description:</strong> ${point.desc}</p>
+                    <p><strong>Coordinates:</strong> ${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}</p>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            markers.push(marker);
+        });
+
+        // Custom icon
+        const customIcon = L.icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2h0PSI0MSIgdmlld0JveD0iMCAwIDI1IDQxIj48cGF0aCBmaWxsPSIjRkYwMDAwIiBkPSJNMTIuNSAwQzUuNiAwIDAgNS42IDAgMTIuNWMwIDEuOC40IDMuNSAxLjEgNS4xTDEyLjUgNDFsMTEuNC0yMy40Yy43LTEuNiAxLjEtMy4zIDEuMS01LjFDMjUgNS42IDE5LjQgMCAxMi41IDB6bTAgMTcuNmMtMi44IDAtNS4xLTIuMy01LjEtNS4xczIuMy01LjEgNS4xLTUuMSA1LjEgMi4zIDUuMSA1LjEtMi4zIDUuMS01LjEgNS4xeiIvPjwvc3ZnPg==',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34]
+        });
+
+        // Add random marker function
+        function addRandomMarker() {
+            const bounds = map.getBounds();
+            const lat = bounds.getSouth() + (Math.random() * (bounds.getNorth() - bounds.getSouth()));
+            const lng = bounds.getWest() + (Math.random() * (bounds.getEast() - bounds.getWest()));
+            
+            const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+            marker.bindPopup(`
+                <div class="custom-popup">
+                    <h4>Random Marker</h4>
+                    <p>Added at: ${new Date().toLocaleTimeString()}</p>
+                    <p>${lat.toFixed(5)}, ${lng.toFixed(5)}</p>
+                </div>
+            `);
+            markers.push(marker);
+        }
+
+        // Clear all markers
+        function clearMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+        }
+
+        // Fit view to all markers
+        function fitAllMarkers() {
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // Toggle layer control
+        function toggleLayerControl() {
+            if (showingLayers) {
+                map.removeControl(layerControl);
+                showingLayers = false;
+            } else {
+                layerControl = L.control.layers(baseMaps).addTo(map);
+                showingLayers = true;
+            }
+        }
+
+        // Zoom slider control
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomLevel = document.getElementById('zoomLevel');
+
+        zoomSlider.addEventListener('input', function() {
+            map.setZoom(parseInt(this.value));
+        });
+
+        map.on('zoomend', function() {
+            const zoom = map.getZoom();
+            zoomSlider.value = zoom;
+            zoomLevel.textContent = zoom;
+        });
+
+        // Add polyline route example
+        const route = L.polyline([
+            [51.505, -0.09],
+            [51.51, -0.1],
+            [51.51, -0.12],
+            [51.49, -0.08]
+        ], {
+            color: 'blue',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 10'
+        }).addTo(map);
+
+        route.bindPopup('Sample Route');
+
+        // Click event for coordinates
+        map.on('click', function(e) {
+            console.log('Clicked at:', e.latlng);
+        });
+
+        // Scale control
+        L.control.scale({ imperial: false, metric: true }).addTo(map);
+
+        console.log('Advanced map initialized with', markers.length, 'markers');
+    </script>
+</body>
+</html>
