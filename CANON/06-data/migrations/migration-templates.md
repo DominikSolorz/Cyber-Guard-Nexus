@@ -10,17 +10,17 @@ YYYYMMDDHHMMSS_descriptive_name.sql
 or
 YYYYMMDDHHMMSS_descriptive_name.js (for NoSQL)
 
-Example: 20231224120000_create_users_table.sql
+Example: 20241224120000_create_users_table.sql
 ```
 
 ## PostgreSQL Migrations
 
 ### Migration Template
 ```sql
--- Migration: 20231224120000_create_users_table
+-- Migration: 20241224120000_create_users_table
 -- Description: Create users table with basic authentication fields
 -- Author: [Your Name]
--- Date: 2023-12-24
+-- Date: 2024-12-24
 
 -- UP Migration
 BEGIN;
@@ -48,7 +48,7 @@ COMMIT;
 
 ### Add Column Migration
 ```sql
--- Migration: 20231224130000_add_user_verification
+-- Migration: 20241224130000_add_user_verification
 -- Description: Add email verification fields
 
 BEGIN;
@@ -73,7 +73,7 @@ COMMIT;
 
 ### Modify Column Migration
 ```sql
--- Migration: 20231224140000_modify_username_length
+-- Migration: 20241224140000_modify_username_length
 -- Description: Increase username max length
 
 BEGIN;
@@ -97,7 +97,7 @@ COMMIT;
 
 ### Add Foreign Key Migration
 ```sql
--- Migration: 20231224150000_add_user_profile
+-- Migration: 20241224150000_add_user_profile
 -- Description: Create user profiles with foreign key
 
 BEGIN;
@@ -125,7 +125,7 @@ COMMIT;
 
 ### Data Migration
 ```sql
--- Migration: 20231224160000_migrate_user_data
+-- Migration: 20241224160000_migrate_user_data
 -- Description: Migrate and transform user data
 
 BEGIN;
@@ -158,7 +158,7 @@ COMMIT;
 
 ### Add Index Migration
 ```sql
--- Migration: 20231224170000_add_performance_indexes
+-- Migration: 20241224170000_add_performance_indexes
 -- Description: Add indexes for query performance
 
 BEGIN;
@@ -185,7 +185,7 @@ COMMIT;
 
 ### JavaScript Migration Template
 ```javascript
-// Migration: 20231224120000_create_users_collection
+// Migration: 20241224120000_create_users_collection
 // Description: Create users collection with validation
 
 module.exports = {
@@ -234,7 +234,7 @@ module.exports = {
 
 ### Add Field Migration (MongoDB)
 ```javascript
-// Migration: 20231224130000_add_user_verification
+// Migration: 20241224130000_add_user_verification
 // Description: Add verification fields to users
 
 module.exports = {
@@ -291,7 +291,7 @@ module.exports = {
 
 ### Data Transformation Migration (MongoDB)
 ```javascript
-// Migration: 20231224140000_normalize_emails
+// Migration: 20241224140000_normalize_emails
 // Description: Normalize all email addresses to lowercase
 
 module.exports = {
