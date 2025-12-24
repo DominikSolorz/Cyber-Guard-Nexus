@@ -7,6 +7,9 @@ Neutral, reusable database schema patterns for common use cases.
 ### PostgreSQL
 ```sql
 -- Users table
+-- Note: gen_random_uuid() requires PostgreSQL 13+ or uuid-ossp extension
+-- For older versions: CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Then use: uuid_generate_v4() instead of gen_random_uuid()
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,

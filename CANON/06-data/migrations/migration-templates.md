@@ -11,6 +11,9 @@ or
 YYYYMMDDHHMMSS_descriptive_name.js (for NoSQL)
 
 Example: 20241224120000_create_users_table.sql
+
+Note: Replace YYYYMMDDHHMMSS with actual timestamp when creating migrations.
+Use unique timestamps to avoid conflicts (consider using: date +%Y%m%d%H%M%S)
 ```
 
 ## PostgreSQL Migrations

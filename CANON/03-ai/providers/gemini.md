@@ -40,9 +40,9 @@ Google Gemini provides access to multimodal AI models via REST API. This guide c
 ```bash
 # .env file
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-pro
-GEMINI_TIMEOUT=30000
-GEMINI_MAX_TOKENS=2048
+GEMINI_MODEL=gemini-pro  # Options: gemini-pro, gemini-pro-vision
+GEMINI_TIMEOUT=30000  # Request timeout in milliseconds
+GEMINI_MAX_TOKENS=2048  # Max output tokens (gemini-pro supports up to 8192)
 ```
 
 ### JavaScript/Node.js Example

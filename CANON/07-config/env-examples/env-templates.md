@@ -14,12 +14,12 @@ APP_URL=http://localhost:3000
 APP_PORT=3000
 LOG_LEVEL=debug
 
-# Database
+# Database - CHANGE THESE VALUES!
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=myapp_dev
 DB_USER=dev_user
-DB_PASSWORD=dev_password_change_me
+DB_PASSWORD=CHANGE_ME_generate_secure_password  # DO NOT USE THIS VALUE
 DB_SSL=false
 DB_POOL_MIN=2
 DB_POOL_MAX=10

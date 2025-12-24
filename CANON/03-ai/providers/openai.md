@@ -39,9 +39,9 @@ OpenAI provides access to large language models via REST API. This guide covers 
 ```bash
 # .env file
 OPENAI_API_KEY=your_key_here
-OPENAI_ORG_ID=your_org_id  # Optional
+OPENAI_ORG_ID=your_org_id  # Optional - only needed for organization accounts
 OPENAI_MAX_TOKENS=1000
-OPENAI_TIMEOUT=30000
+OPENAI_TIMEOUT=30000  # Timeout in milliseconds
 ```
 
 ### JavaScript/Node.js Example
