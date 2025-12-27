@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra o Królu - King's Quest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .game-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+        }
+
+        .game-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .crown-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .game-content {
+            padding: 2rem;
+        }
+
+        .story-text {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            min-height: 150px;
+            line-height: 1.6;
+            border-left: 4px solid #667eea;
+        }
+
+        .choices {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .choice-btn:active {
+            transform: translateY(0);
+        }
+
+        .choice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .choice-icon {
+            margin-right: 0.5rem;
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .game-over h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .achievement {
+            background: #d4edda;
+            color: #155724;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border-left: 4px solid #28a745;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .story-text, .choice-btn {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="crown-icon">👑</div>
+            <h1>Gra o Królu</h1>
+            <p>Prowadź swoje królestwo do chwały!</p>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat-box">
+                <div class="stat-label">Złoto</div>
+                <div class="stat-value" id="gold">100</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Armia</div>
+                <div class="stat-value" id="army">50</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Zadowolenie</div>
+                <div class="stat-value" id="happiness">75</div>
+            </div>
+        </div>
+
+        <div class="game-content">
+            <div class="story-text" id="storyText">
+                Witaj, Królu! Twoje królestwo czeka na mądre decyzje. Każdy wybór ma konsekwencje...
+            </div>
+
+            <div class="choices" id="choices">
+                <!-- Choices will be inserted here -->
+            </div>
+
+            <div id="gameResult"></div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Offline-ready game logic, no external dependencies
+        class KingGame {
+            constructor() {
+                this.state = {
+                    gold: 100,
+                    army: 50,
+                    happiness: 75,
+                    turn: 0,
+                    maxTurns: 10,
+                    gameOver: false
+                };
+
+                this.scenarios = [
+                    {
+                        text: "Wędrowny kupiec oferuje Ci rzadkie towary za 30 sztuk złota. Co robisz?",
+                        choices: [
+                            {
+                                text: "💰 Kupuję towary (może przydadzą się później)",
+                                effects: { gold: -30, happiness: 5 }
+                            },
+                            {
+                                text: "🤝 Negocjuję lepszą cenę",
+                                effects: { gold: -15, happiness: 10 },
+                                requires: { gold: 15 }
+                            },
+                            {
+                                text: "❌ Odrzucam ofertę",
+                                effects: { happiness: -5 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Sąsiednie królestwo proponuje sojusz. Wymaga to wysłania 20 żołnierzy jako znak dobrej woli.",
+                        choices: [
+                            {
+                                text: "⚔️ Akceptuję sojusz",
+                                effects: { army: -20, happiness: 15 }
+                            },
+                            {
+                                text: "🛡️ Odmawiam, wzmacniam obronę",
+                                effects: { gold: -20, army: 10 },
+                                requires: { gold: 20 }
+                            },
+                            {
+                                text: "🤔 Czekam i obserwuję",
+                                effects: { happiness: -10 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Rolnicy proszą o pomoc - susza zniszczyła plony. Potrzebują 40 złota na nowe nasiona.",
+                        choices: [
+                            {
+                                text: "💚 Daję pełną kwotę",
+                                effects: { gold: -40, happiness: 20 }
+                            },
+                            {
+                                text: "💛 Daję połowę (20 złota)",
+                                effects: { gold: -20, happiness: 10 }
+                            },
+                            {
+                                text: "💔 Nie mogę pomóc",
+                                effects: { happiness: -25 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Bandyci napadają na wioskę! Potrzebujesz wysłać żołnierzy lub zapłacić okup.",
+                        choices: [
+                            {
+                                text: "⚔️ Wysyłam armię (15 żołnierzy)",
+                                effects: { army: -15, happiness: 10 },
+                                requires: { army: 15 }
+                            },
+                            {
+                                text: "💰 Płacę okup (50 złota)",
+                                effects: { gold: -50, happiness: -10 },
+                                requires: { gold: 50 }
+                            },
+                            {
+                                text: "🏰 Ignoruję problem",
+                                effects: { happiness: -30 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Młody rycerz oferuje swoje usługi. Chce 25 złota lub może wyszkolić 10 rekrutów za darmo.",
+                        choices: [
+                            {
+                                text: "⚔️ Zatrudniam za złoto",
+                                effects: { gold: -25, army: 15 },
+                                requires: { gold: 25 }
+                            },
+                            {
+                                text: "🎓 Przyjmuję ofertę szkolenia",
+                                effects: { army: 10, happiness: 5 }
+                            },
+                            {
+                                text: "❌ Odrzucam ofertę",
+                                effects: { happiness: -5 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Święto zbliża się! Lud chce uroczystości. To kosztuje, ale podnosi morale.",
+                        choices: [
+                            {
+                                text: "🎉 Wielkie święto (60 złota)",
+                                effects: { gold: -60, happiness: 30 },
+                                requires: { gold: 60 }
+                            },
+                            {
+                                text: "🎊 Skromne święto (30 złota)",
+                                effects: { gold: -30, happiness: 15 },
+                                requires: { gold: 30 }
+                            },
+                            {
+                                text: "🚫 Bez święta w tym roku",
+                                effects: { happiness: -20 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Kopalnia złota została odkryta! Ale wymaga 40 złota na rozpoczęcie eksploatacji.",
+                        choices: [
+                            {
+                                text: "⛏️ Inwestuję w kopalnię",
+                                effects: { gold: -40 },
+                                bonus: { gold: 80 },
+                                requires: { gold: 40 }
+                            },
+                            {
+                                text: "💰 Sprzedaję prawa (natychmiastowe 50 złota)",
+                                effects: { gold: 50, happiness: -5 }
+                            },
+                            {
+                                text: "⏳ Czekam na lepszą okazję",
+                                effects: {}
+                            }
+                        ]
+                    },
+                    {
+                        text: "Mędrzec oferuje starożytną wiedzę która może wzmocnić twoje wojsko. Cena: 35 złota.",
+                        choices: [
+                            {
+                                text: "📚 Kupuję wiedzę",
+                                effects: { gold: -35, army: 20 },
+                                requires: { gold: 35 }
+                            },
+                            {
+                                text: "🤔 Proponuję wymianę usług",
+                                effects: { army: 10, happiness: 5 }
+                            },
+                            {
+                                text: "❌ Nie jestem zainteresowany",
+                                effects: {}
+                            }
+                        ]
+                    }
+                ];
+
+                this.currentScenario = null;
+                this.updateUI();
+                this.nextScenario();
+            }
+
+            nextScenario() {
+                if (this.state.turn >= this.state.maxTurns) {
+                    this.endGame();
+                    return;
+                }
+
+                if (this.checkGameOver()) {
+                    this.endGame();
+                    return;
+                }
+
+                // Get random scenario
+                const availableScenarios = this.scenarios.filter(s => s !== this.currentScenario);
+                this.currentScenario = availableScenarios[Math.floor(Math.random() * availableScenarios.length)];
+                
+                this.state.turn++;
+                this.displayScenario();
+                this.updateProgress();
+            }
+
+            displayScenario() {
+                const storyText = document.getElementById('storyText');
+                const choicesDiv = document.getElementById('choices');
+                
+                storyText.textContent = `Tura ${this.state.turn}/${this.state.maxTurns}: ${this.currentScenario.text}`;
+                choicesDiv.innerHTML = '';
+
+                this.currentScenario.choices.forEach((choice, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-btn';
+                    button.innerHTML = choice.text;
+                    
+                    // Check if choice is available
+                    let available = true;
+                    if (choice.requires) {
+                        for (let [key, value] of Object.entries(choice.requires)) {
+                            if (this.state[key] < value) {
+                                available = false;
+                                button.disabled = true;
+                                button.style.opacity = '0.5';
+                            }
+                        }
+                    }
+
+                    button.onclick = () => this.makeChoice(choice);
+                    choicesDiv.appendChild(button);
+                });
+            }
+
+            makeChoice(choice) {
+                // Apply effects
+                for (let [key, value] of Object.entries(choice.effects)) {
+                    this.state[key] += value;
+                    this.state[key] = Math.max(0, Math.min(this.state[key], 200)); // Clamp values
+                }
+
+                // Apply bonus if exists (delayed effect)
+                if (choice.bonus) {
+                    setTimeout(() => {
+                        for (let [key, value] of Object.entries(choice.bonus)) {
+                            this.state[key] += value;
+                        }
+                        this.updateUI();
+                        this.showAchievement("Bonus otrzymany! " + JSON.stringify(choice.bonus));
+                    }, 500);
+                }
+
+                this.updateUI();
+                
+                // Small delay before next scenario
+                setTimeout(() => this.nextScenario(), 600);
+            }
+
+            updateUI() {
+                document.getElementById('gold').textContent = this.state.gold;
+                document.getElementById('army').textContent = this.state.army;
+                document.getElementById('happiness').textContent = this.state.happiness;
+            }
+
+            updateProgress() {
+                const progress = (this.state.turn / this.state.maxTurns) * 100;
+                document.getElementById('progress').style.width = progress + '%';
+            }
+
+            checkGameOver() {
+                return this.state.gold <= 0 || this.state.army <= 0 || this.state.happiness <= 0;
+            }
+
+            endGame() {
+                this.state.gameOver = true;
+                const gameResult = document.getElementById('gameResult');
+                const choicesDiv = document.getElementById('choices');
+                const storyText = document.getElementById('storyText');
+                
+                choicesDiv.innerHTML = '';
+                
+                let result = '';
+                let score = this.state.gold + this.state.army * 2 + this.state.happiness * 3;
+
+                if (this.state.gold <= 0) {
+                    result = '<h2>💸 Bankructwo!</h2><p>Twoje królestwo zbankrutowało. Lud odszedł szukać lepszego życia.</p>';
+                } else if (this.state.army <= 0) {
+                    result = '<h2>⚔️ Brak obrony!</h2><p>Bez armii, twoje królestwo padło łupem najeźdźców.</p>';
+                } else if (this.state.happiness <= 0) {
+                    result = '<h2>😢 Rewolucja!</h2><p>Lud był tak niezadowolony, że wybuchła rewolta i straciłeś tron.</p>';
+                } else if (this.state.turn >= this.state.maxTurns) {
+                    if (score >= 400) {
+                        result = '<h2>🏆 Wspaniałe Zwycięstwo!</h2><p>Twoje mądre decyzje sprawiły, że królestwo kwitnie!</p>';
+                    } else if (score >= 250) {
+                        result = '<h2>👑 Sukces!</h2><p>Przetrwałeś i twoje królestwo jest stabilne.</p>';
+                    } else {
+                        result = '<h2>😐 Przetrwanie</h2><p>Udało Ci się przetrwać, ale królestwo mogłoby być lepsze.</p>';
+                    }
+                }
+
+                storyText.innerHTML = '';
+                gameResult.innerHTML = `
+                    <div class="game-over">
+                        ${result}
+                        <div class="achievement">
+                            <strong>Wynik końcowy: ${score}</strong><br>
+                            Złoto: ${this.state.gold} | Armia: ${this.state.army} | Zadowolenie: ${this.state.happiness}
+                        </div>
+                        <button class="restart-btn" onclick="location.reload()">🔄 Zagraj Ponownie</button>
+                    </div>
+                `;
+            }
+
+            showAchievement(message) {
+                const gameResult = document.getElementById('gameResult');
+                gameResult.innerHTML = `<div class="achievement">${message}</div>`;
+                setTimeout(() => {
+                    gameResult.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // Save game state to localStorage
+        function saveGame(game) {
+            localStorage.setItem('kingGameState', JSON.stringify(game.state));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('kingGameState');
+            return saved ? JSON.parse(saved) : null;
+        }
+
+        // Initialize game when page loads
+        let game;
+        window.addEventListener('load', function() {
+            game = new KingGame();
+            
+            // Auto-save every turn
+            const originalNext = game.nextScenario.bind(game);
+            game.nextScenario = function() {
+                originalNext();
+                saveGame(game);
+            };
+        });
+    </script>
+</body>
+</html>

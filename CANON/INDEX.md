@@ -25,6 +25,9 @@
 ### forms
 - [01-ui-patterns/forms/offline-form.html](01-ui-patterns/forms/offline-form.html): Formularze offline z localStorage
 
+### games
+- [01-ui-patterns/games/king-game.html](01-ui-patterns/games/king-game.html): Gra o Królu - strategiczna gra przeglądarowa
+
 ## 02-maps
 ### leaflet-osm
 - [02-maps/leaflet-osm/basic.html](02-maps/leaflet-osm/basic.html): Podstawowa mapa Leaflet OSM
