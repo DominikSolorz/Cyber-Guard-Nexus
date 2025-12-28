@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra o Tron - Królestwo Polski</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Trajan+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes fireGlow {
+            0%, 100% { text-shadow: 0 0 10px #ff6b00, 0 0 20px #ff8c00, 0 0 30px #ffa500, 0 0 40px #ff4500; }
+            50% { text-shadow: 0 0 20px #ff6b00, 0 0 30px #ff8c00, 0 0 40px #ffa500, 0 0 50px #ff4500; }
+        }
+
+        @keyframes torchFlicker {
+            0%, 100% { opacity: 0.9; filter: brightness(1); }
+            25% { opacity: 0.95; filter: brightness(1.1); }
+            50% { opacity: 0.85; filter: brightness(0.95); }
+            75% { opacity: 0.92; filter: brightness(1.05); }
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(139, 0, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(25, 25, 112, 0.3) 0%, transparent 50%),
+                linear-gradient(to bottom, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            animation: bgPulse 10s ease-in-out infinite;
+            z-index: -2;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.15) 0px,
+                    transparent 1px,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.15) 3px
+                );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .eagles-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="M500,100 Q450,150 500,200 Q550,150 500,100 M400,300 L450,350 L400,400 M600,300 L550,350 L600,400" fill="none" stroke="rgba(255,215,0,0.05)" stroke-width="2"/></svg>');
+            background-size: 400px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-container {
+            max-width: 900px;
+            width: 100%;
+            background: linear-gradient(to bottom, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 0;
+            border: 4px solid;
+            border-image: linear-gradient(135deg, #8b0000, #ffd700, #c0c0c0, #8b0000) 1;
+            box-shadow: 
+                0 0 30px rgba(139, 0, 0, 0.5),
+                0 0 60px rgba(255, 215, 0, 0.3),
+                inset 0 0 100px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23000000" opacity="0.1"/><path d="M0,50 Q25,25 50,50 T100,50" stroke="%23ffd700" stroke-width="0.5" fill="none" opacity="0.3"/></svg>');
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .ornamental-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to right, transparent, #ffd700, transparent);
+            opacity: 0.3;
+        }
+
+        .ornamental-border-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to right, transparent, #8b0000, transparent);
+            opacity: 0.3;
+        }
+
+        .game-header {
+            background: linear-gradient(135deg, #8b0000 0%, #a52a2a 50%, #8b0000 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #ffd700;
+            position: relative;
+            border-bottom: 3px solid #ffd700;
+            box-shadow: 
+                inset 0 0 50px rgba(0, 0, 0, 0.5),
+                0 10px 30px rgba(139, 0, 0, 0.5);
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="%23ffd700" stroke-width="2" opacity="0.1"/><path d="M100,20 L120,80 L180,80 L130,120 L150,180 L100,140 L50,180 L70,120 L20,80 L80,80 Z" fill="%23ffd700" opacity="0.05"/></svg>');
+            background-size: 200px;
+            opacity: 0.3;
+        }
+
+        .crown-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+            animation: torchFlicker 3s ease-in-out infinite;
+        }
+
+        .crown-icon {
+            font-size: 5rem;
+            filter: drop-shadow(0 0 10px #ffd700) drop-shadow(0 0 20px #ff8c00);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(-5deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        .game-header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            animation: fireGlow 3s ease-in-out infinite;
+            font-family: 'Cinzel', serif;
+            position: relative;
+            z-index: 2;
+        }
+
+        .game-header .subtitle {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .polish-emblem {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            opacity: 0.4;
+            filter: drop-shadow(0 0 5px #ffd700);
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            padding: 2rem;
+            background: linear-gradient(to bottom, #2d2d2d, #1a1a1a);
+            border-bottom: 2px solid #8b0000;
+            position: relative;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #ffd700;
+            box-shadow: 
+                0 4px 15px rgba(139, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 215, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+            animation: statGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes statGlow {
+            0%, 100% { transform: rotate(0deg); opacity: 0.5; }
+            50% { transform: rotate(180deg); opacity: 1; }
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 8px 25px rgba(139, 0, 0, 0.5),
+                inset 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ffd700;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffd700, #ffed4e, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-content {
+            padding: 2.5rem 2rem;
+            background: linear-gradient(to bottom, #1a1a1a, #0d0d0d);
+            position: relative;
+        }
+
+        .story-text {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            min-height: 150px;
+            line-height: 1.8;
+            border: 2px solid #8b0000;
+            border-left: 6px solid #ffd700;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.5),
+                inset 0 0 30px rgba(139, 0, 0, 0.1);
+            position: relative;
+            font-family: 'Cinzel', serif;
+        }
+
+        .story-text::before {
+            content: '"';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            font-size: 4rem;
+            color: #ffd700;
+            opacity: 0.3;
+            font-family: Georgia, serif;
+        }
+
+        .turn-indicator {
+            display: inline-block;
+            background: #8b0000;
+            color: #ffd700;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border: 1px solid #ffd700;
+            box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+        }
+
+        .choices {
+            display: grid;
+            gap: 1.2rem;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #8b0000 0%, #a52a2a 50%, #8b0000 100%);
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 1.5rem 1.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 4px 15px rgba(139, 0, 0, 0.4),
+                inset 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .choice-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .choice-btn:hover::before {
+            left: 100%;
+        }
+
+        .choice-btn:hover {
+            transform: translateX(10px) scale(1.02);
+            box-shadow: 
+                0 8px 25px rgba(139, 0, 0, 0.6),
+                inset 0 0 30px rgba(255, 215, 0, 0.2);
+            border-color: #ffed4e;
+            background: linear-gradient(135deg, #a52a2a 0%, #8b0000 50%, #a52a2a 100%);
+        }
+
+        .choice-btn:active {
+            transform: translateX(5px) scale(0.98);
+        }
+
+        .choice-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .choice-btn:disabled:hover {
+            transform: none;
+        }
+
+        .choice-icon {
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+        }
+
+        .game-over h2 {
+            color: #ffd700;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: fireGlow 2s ease-in-out infinite;
+        }
+
+        .game-over p {
+            color: #e0e0e0;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #8b0000 0%, #a52a2a 100%);
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 1.2rem 3rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            font-family: 'Cinzel', serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(139, 0, 0, 0.7);
+            background: linear-gradient(135deg, #a52a2a 0%, #8b0000 100%);
+        }
+
+        .achievement {
+            background: linear-gradient(135deg, #1a5f1a 0%, #2d8b2d 100%);
+            color: #ffd700;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            border: 2px solid #ffd700;
+            box-shadow: 0 4px 15px rgba(26, 95, 26, 0.5);
+            font-family: 'Cinzel', serif;
+        }
+
+        .achievement strong {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .story-text, .choice-btn {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: linear-gradient(to right, #1a1a1a, #2d2d2d);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 2rem;
+            border: 2px solid #8b0000;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b0000 0%, #ffd700 50%, #8b0000 100%);
+            transition: width 0.5s ease;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: progressShine 2s ease-in-out infinite;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #1a5f1a, #2d8b2d);
+            color: #ffd700;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.5s ease-out, slideOut 0.5s ease-in 2.5s;
+            z-index: 10000;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .game-header h1 {
+                font-size: 2rem;
+            }
+            
+            .game-stats {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+            }
+
+            .choice-btn:hover {
+                transform: scale(1.02);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="eagles-bg"></div>
+    <div class="container-wrapper">
+        <div class="game-container">
+            <div class="ornamental-border"></div>
+            
+            <div class="game-header">
+                <!-- Polish Eagle SVG -->
+                <svg class="polish-emblem" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50,20 L35,35 L50,45 L65,35 Z M30,40 L25,50 L30,60 M70,40 L75,50 L70,60 M40,55 L50,70 L60,55 M45,72 L50,80 L55,72" 
+                          fill="#ffd700" stroke="#8b0000" stroke-width="2"/>
+                    <circle cx="50" cy="30" r="4" fill="#8b0000"/>
+                </svg>
+                
+                <div class="crown-container">
+                    <div class="crown-icon">👑</div>
+                </div>
+                <h1>Gra o Tron</h1>
+                <p class="subtitle">Królestwo Polskie</p>
+            </div>
+
+            <div class="game-stats">
+                <div class="stat-box">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-label">Złoto</div>
+                    <div class="stat-value" id="gold">100</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">⚔️</div>
+                    <div class="stat-label">Armia</div>
+                    <div class="stat-value" id="army">50</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-label">Poddani</div>
+                    <div class="stat-value" id="happiness">75</div>
+                </div>
+            </div>
+
+            <div class="game-content">
+                <div class="story-text" id="storyText">
+                    <span class="turn-indicator">Rozpoczynasz</span><br><br>
+                    Witaj, Królu Polski! Twoje królestwo czeka na mądre i sprawiedliwe decyzje. 
+                    Każdy wybór wpłynie na losy Twojego ludu, potęgę armii i skarby korony...
+                </div>
+
+                <div class="choices" id="choices">
+                    <!-- Choices will be inserted here -->
+                </div>
+
+                <div id="gameResult"></div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="ornamental-border-bottom"></div>
+        </div>
+    </div>
+
+    <script>
+        // Offline-ready game logic, no external dependencies
+        class KingGame {
+            constructor() {
+                this.state = {
+                    gold: 100,
+                    army: 50,
+                    happiness: 75,
+                    turn: 0,
+                    maxTurns: 10,
+                    gameOver: false
+                };
+
+                this.scenarios = [
+                    {
+                        text: "Posłowie z Krakowa przynoszą wieści - Wawel potrzebuje odnowienia! Kosztowny projekt wymaga 50 złotych monet, ale podniesie prestiż królestwa.",
+                        choices: [
+                            {
+                                text: "🏰 Odnawiam Wawel - symbol potęgi",
+                                effects: { gold: -50, happiness: 25 },
+                                requires: { gold: 50 }
+                            },
+                            {
+                                text: "💰 Daję połowę - skromna renowacja",
+                                effects: { gold: -25, happiness: 12 },
+                                requires: { gold: 25 }
+                            },
+                            {
+                                text: "⏳ Odkładam decyzję na później",
+                                effects: { happiness: -8 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Husaria - elitarna kawaleria Polski - potrzebuje nowego ekwipunku. Dowódca prosi o 40 złotych na najlepsze zbroje i kopie skrzydlate.",
+                        choices: [
+                            {
+                                text: "🦅 Wyposażam husarię w najlepszy sprzęt!",
+                                effects: { gold: -40, army: 30 },
+                                requires: { gold: 40 }
+                            },
+                            {
+                                text: "⚔️ Daję podstawowe uzbrojenie",
+                                effects: { gold: -20, army: 15 },
+                                requires: { gold: 20 }
+                            },
+                            {
+                                text: "🛡️ Husaria musi poczekać",
+                                effects: { army: -10, happiness: -15 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Tatarzy najeżdżają od wschodu! Twoje wioski są zagrożone. Musisz szybko zareagować - wysłać armię lub zapłacić haracz.",
+                        choices: [
+                            {
+                                text: "⚔️ Husaria do boju! (25 wojowników)",
+                                effects: { army: -25, happiness: 20 },
+                                requires: { army: 25 }
+                            },
+                            {
+                                text: "💰 Płacę haracz (60 złotych)",
+                                effects: { gold: -60, happiness: -15 },
+                                requires: { gold: 60 }
+                            },
+                            {
+                                text: "🏰 Ukrywam lud w zamkach",
+                                effects: { happiness: -30, gold: -10 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Sejm Walny zwołany! Szlachta domaga się 'Nihil Novi' - żadnej nowej ustawy bez zgody szlachty. Odmowa może wywołać bunt.",
+                        choices: [
+                            {
+                                text: "👑 Zgadzam się - utrzymuję pokój",
+                                effects: { happiness: 15, gold: -10 }
+                            },
+                            {
+                                text: "⚖️ Negocjuję kompromis",
+                                effects: { happiness: 5, gold: -5 }
+                            },
+                            {
+                                text: "❌ Odmawiam - król ma władzę!",
+                                effects: { happiness: -35, army: -10 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Uniwersytet Jagielloński prosi o fundusze na bibliotekę i nowych profesorów. Inwestycja w wiedzę to inwestycja w przyszłość!",
+                        choices: [
+                            {
+                                text: "📚 Hojnie wspieram naukę (45 złotych)",
+                                effects: { gold: -45, happiness: 25 },
+                                requires: { gold: 45 }
+                            },
+                            {
+                                text: "📖 Daję skromne wsparcie (20 złotych)",
+                                effects: { gold: -20, happiness: 10 },
+                                requires: { gold: 20 }
+                            },
+                            {
+                                text: "⏳ Uniwersytet musi poczekać",
+                                effects: { happiness: -10 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Wielkie Święto Wniebowzięcia zbliża się! Lud oczekuje uroczystości. Kosztowne, ale podnosią morale całego królestwa.",
+                        choices: [
+                            {
+                                text: "🎊 Wspaniałe święto z procesją (50 złotych)",
+                                effects: { gold: -50, happiness: 35 },
+                                requires: { gold: 50 }
+                            },
+                            {
+                                text: "⛪ Skromne nabożeństwo (25 złotych)",
+                                effects: { gold: -25, happiness: 18 },
+                                requires: { gold: 25 }
+                            },
+                            {
+                                text: "🚫 Rok bez uroczystości",
+                                effects: { happiness: -25 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Kupcy z Gdańska oferują ekskluzywny kontrakt handlowy. Za 35 złotych otrzymasz monopol na bursztyn i drewno - później zwróci się wielokrotnie!",
+                        choices: [
+                            {
+                                text: "💎 Kupuję kontrakt - inwestuję w handel",
+                                effects: { gold: -35 },
+                                bonus: { gold: 90, happiness: 10 },
+                                requires: { gold: 35 }
+                            },
+                            {
+                                text: "🤝 Negocjuję lepsze warunki",
+                                effects: { gold: -20 },
+                                bonus: { gold: 50 },
+                                requires: { gold: 20 }
+                            },
+                            {
+                                text: "❌ Odmawiam - zbyt ryzykowne",
+                                effects: { happiness: -5 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Mistrz kowalski oferuje wykuć legendarny miecz 'Szczerbiec' - symbol władzy królewskiej. Kosztowny, ale bezcenny dla prestiżu!",
+                        choices: [
+                            {
+                                text: "⚔️ Wykuwam Szczerbiec (55 złotych)",
+                                effects: { gold: -55, happiness: 30, army: 5 },
+                                requires: { gold: 55 }
+                            },
+                            {
+                                text: "🗡️ Zamawiam zwykły miecz królewski",
+                                effects: { gold: -25, happiness: 10 },
+                                requires: { gold: 25 }
+                            },
+                            {
+                                text: "❌ Obecny miecz wystarczy",
+                                effects: { happiness: -8 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Rycerz Jan z Czarnolasu - poeta i wojownik - oferuje swe usługi. Może wyszkolić wojowników lub tworzyć pieśni o Twojej chwale.",
+                        choices: [
+                            {
+                                text: "⚔️ Niech szkolirycerzy (30 złotych)",
+                                effects: { gold: -30, army: 25 },
+                                requires: { gold: 30 }
+                            },
+                            {
+                                text: "🎭 Niech pisze pieśni o królewskiej chwale",
+                                effects: { gold: -15, happiness: 20 },
+                                requires: { gold: 15 }
+                            },
+                            {
+                                text: "🤝 Przyjmuję go do dworu bez opłat",
+                                effects: { happiness: 10, army: 8 }
+                            }
+                        ]
+                    },
+                    {
+                        text: "Król Węgier Maciej Korwin proponuje sojusz dynastyczny - małżeństwo to pokój, ale kosztowne wyprawy weselne i posag.",
+                        choices: [
+                            {
+                                text: "👰 Przyjmuję sojusz królewskim małżeństwem",
+                                effects: { gold: -45, happiness: 25, army: 15 },
+                                requires: { gold: 45 }
+                            },
+                            {
+                                text: "🤝 Sojusz bez małżeństwa - tylko pakt",
+                                effects: { happiness: 10 }
+                            },
+                            {
+                                text: "❌ Odmawiam - Polska wolna od wpływów",
+                                effects: { happiness: -15, army: -5 }
+                            }
+                        ]
+                    }
+                ];
+
+                this.currentScenario = null;
+                this.updateUI();
+                this.nextScenario();
+            }
+
+            nextScenario() {
+                if (this.state.turn >= this.state.maxTurns) {
+                    this.endGame();
+                    return;
+                }
+
+                if (this.checkGameOver()) {
+                    this.endGame();
+                    return;
+                }
+
+                // Get random scenario
+                const availableScenarios = this.scenarios.filter(s => s !== this.currentScenario);
+                this.currentScenario = availableScenarios[Math.floor(Math.random() * availableScenarios.length)];
+                
+                this.state.turn++;
+                this.displayScenario();
+                this.updateProgress();
+            }
+
+            displayScenario() {
+                const storyText = document.getElementById('storyText');
+                const choicesDiv = document.getElementById('choices');
+                
+                storyText.innerHTML = `<span class="turn-indicator">Tura ${this.state.turn}/${this.state.maxTurns}</span><br><br>${this.currentScenario.text}`;
+                choicesDiv.innerHTML = '';
+
+                this.currentScenario.choices.forEach((choice, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-btn';
+                    button.innerHTML = `<span class="choice-icon">${choice.text.split(' ')[0]}</span>${choice.text.substring(choice.text.indexOf(' ') + 1)}`;
+                    
+                    // Check if choice is available
+                    let available = true;
+                    if (choice.requires) {
+                        for (let [key, value] of Object.entries(choice.requires)) {
+                            if (this.state[key] < value) {
+                                available = false;
+                                button.disabled = true;
+                                button.style.opacity = '0.4';
+                                button.style.filter = 'grayscale(1)';
+                            }
+                        }
+                    }
+
+                    button.onclick = () => this.makeChoice(choice);
+                    choicesDiv.appendChild(button);
+                });
+            }
+
+            makeChoice(choice) {
+                // Apply effects
+                for (let [key, value] of Object.entries(choice.effects)) {
+                    this.state[key] += value;
+                    this.state[key] = Math.max(0, Math.min(this.state[key], 200)); // Clamp values
+                }
+
+                // Apply bonus if exists (delayed effect)
+                if (choice.bonus) {
+                    setTimeout(() => {
+                        for (let [key, value] of Object.entries(choice.bonus)) {
+                            this.state[key] += value;
+                        }
+                        this.updateUI();
+                        this.showAchievement("Bonus otrzymany! " + JSON.stringify(choice.bonus));
+                    }, 500);
+                }
+
+                this.updateUI();
+                
+                // Small delay before next scenario
+                setTimeout(() => this.nextScenario(), 600);
+            }
+
+            updateUI() {
+                document.getElementById('gold').textContent = this.state.gold;
+                document.getElementById('army').textContent = this.state.army;
+                document.getElementById('happiness').textContent = this.state.happiness;
+            }
+
+            updateProgress() {
+                const progress = (this.state.turn / this.state.maxTurns) * 100;
+                document.getElementById('progress').style.width = progress + '%';
+            }
+
+            checkGameOver() {
+                return this.state.gold <= 0 || this.state.army <= 0 || this.state.happiness <= 0;
+            }
+
+            endGame() {
+                this.state.gameOver = true;
+                const gameResult = document.getElementById('gameResult');
+                const choicesDiv = document.getElementById('choices');
+                const storyText = document.getElementById('storyText');
+                
+                choicesDiv.innerHTML = '';
+                
+                let result = '';
+                let score = this.state.gold + this.state.army * 2 + this.state.happiness * 3;
+
+                if (this.state.gold <= 0) {
+                    result = '<h2>💸 Bankructwo Korony!</h2><p>Skarb królewski opróżniony... Szlachta odrzuca Twoją władzę, a lud cierpi głód. Korona Polski przechodzi w ręce silniejszych!</p>';
+                } else if (this.state.army <= 0) {
+                    result = '<h2>⚔️ Upadek Wojska!</h2><p>Bez husarii i rycerstwa, Polska pada łupem najeźdźców. Tatarzy i Krzyżacy dzielą między siebie ziemie...</p>';
+                } else if (this.state.happiness <= 0) {
+                    result = '<h2>👑 Rewolta Szlachecka!</h2><p>Lud i szlachta buntują się przeciw okrutności króla! "Nihil Novi" - bez zgody szlachty nie ma władzy. Zostałeś obalony!</p>';
+                } else if (this.state.turn >= this.state.maxTurns) {
+                    if (score >= 450) {
+                        result = '<h2>🏆 ZŁOTY WIEK POLSKI!</h2><p>Twoje mądre rządy sprawiły, że Polska kwitnie jak nigdy dotąd! Husaria niepokonana, skarby pełne, lud szczęśliwy. Historia zapisze Cię jako największego z królów!</p>';
+                    } else if (score >= 350) {
+                        result = '<h2>👑 POTĘŻNE KRÓLESTWO</h2><p>Polska pod Twoimi rządami stała się mocarstwem! Wawel lśni, husaria groźna, poddani zadowoleni. Dobry król, pamiętany przez pokolenia!</p>';
+                    } else if (score >= 250) {
+                        result = '<h2>⚖️ Stabilne Panowanie</h2><p>Przetrwałeś trudne czasy i utrzymałeś koronę. Polska jest bezpieczna, choć nie bez wyzwań. Przyzwoite panowanie!</p>';
+                    } else {
+                        result = '<h2>😐 Trudne Czasy</h2><p>Udało się przetrwać, ale królestwo osłabione. Szlachta niezadowolona, lud zmęczony... Trzeba było lepiej zarządzać!</p>';
+                    }
+                }
+
+                storyText.innerHTML = '';
+                gameResult.innerHTML = `
+                    <div class="game-over">
+                        ${result}
+                        <div class="achievement">
+                            <strong>🎖️ WYNIK KOŃCOWY: ${score}</strong><br>
+                            💰 Złoto: ${this.state.gold} | ⚔️ Armia: ${this.state.army} | 👥 Poddani: ${this.state.happiness}<br>
+                            <small>Panowanie: ${this.state.turn} tur</small>
+                        </div>
+                        <button class="restart-btn" onclick="location.reload()">🔄 ZAGRAJ PONOWNIE</button>
+                    </div>
+                `;
+
+            }
+
+            showAchievement(message) {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 3000);
+            }
+        }
+
+        // Save game state to localStorage
+        function saveGame(game) {
+            localStorage.setItem('kingGameState', JSON.stringify(game.state));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('kingGameState');
+            return saved ? JSON.parse(saved) : null;
+        }
+
+        // Initialize game when page loads
+        let game;
+        window.addEventListener('load', function() {
+            game = new KingGame();
+            
+            // Auto-save every turn
+            const originalNext = game.nextScenario.bind(game);
+            game.nextScenario = function() {
+                originalNext();
+                saveGame(game);
+            };
+        });
+    </script>
+</body>
+</html>

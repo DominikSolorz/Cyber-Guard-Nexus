@@ -12,6 +12,10 @@
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin=""/>
     
+    <title>Basic Leaflet OSM Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
     <style>
         * {
             margin: 0;
@@ -54,6 +58,61 @@
         .coordinates {
             font-size: 0.85rem;
             color: #888;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            padding: 1rem;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .info-banner {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .coordinates {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -76,6 +135,34 @@
         const map = L.map('map').setView([51.505, -0.09], 13);
 
         // Add OpenStreetMap tile layer
+    <div class="container">
+        <h1>Basic Leaflet OSM Map</h1>
+        
+        <div class="info-banner">
+            <strong>Note:</strong> This map uses OpenStreetMap tiles from external servers. For fully offline operation, you would need to host tiles locally.
+        </div>
+
+        <div id="map"></div>
+
+        <div class="controls">
+            <button class="btn" onclick="resetView()">Reset View</button>
+            <button class="btn" onclick="addMarker()">Add Random Marker</button>
+            <button class="btn" onclick="clearMarkers()">Clear Markers</button>
+        </div>
+
+        <div class="coordinates" id="coords">
+            Click on the map to see coordinates
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script>
+        // Initialize map centered on Europe
+        const map = L.map('map').setView([51.505, -0.09], 13);
+
+        // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
@@ -119,6 +206,49 @@
             center: map.getCenter(),
             zoom: map.getZoom()
         });
+        // Store markers
+        const markers = [];
+
+        // Add initial marker
+        const initialMarker = L.marker([51.505, -0.09])
+            .addTo(map)
+            .bindPopup('Initial Location')
+            .openPopup();
+        markers.push(initialMarker);
+
+        // Click event to show coordinates
+        map.on('click', function(e) {
+            const lat = e.latlng.lat.toFixed(5);
+            const lng = e.latlng.lng.toFixed(5);
+            document.getElementById('coords').textContent = `Latitude: ${lat}, Longitude: ${lng}`;
+        });
+
+        // Reset view
+        function resetView() {
+            map.setView([51.505, -0.09], 13);
+        }
+
+        // Add random marker
+        function addMarker() {
+            const center = map.getCenter();
+            const lat = center.lat + (Math.random() - 0.5) * 0.1;
+            const lng = center.lng + (Math.random() - 0.5) * 0.1;
+            
+            const marker = L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup(`Marker ${markers.length + 1}`);
+            markers.push(marker);
+        }
+
+        // Clear all markers except initial
+        function clearMarkers() {
+            markers.forEach((marker, index) => {
+                if (index > 0) {
+                    map.removeLayer(marker);
+                }
+            });
+            markers.length = 1;
+        }
     </script>
 </body>
 </html>
