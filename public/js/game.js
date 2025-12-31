@@ -33,6 +33,22 @@
   let playerData;
   let lastSave = 0;
   let skillCooldown = 0;
+  let audioCtx;
+
+  // Simple WebAudio sound generator
+  function playSound(freq, duration, type='sine'){
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + duration);
+  }
 
   function preload() {
     // no external assets - generate textures in create
@@ -78,6 +94,7 @@
     playerData = {
       hp: 30, maxHp: 30, xp: 0, level:1, baseAttack:6, gold:20, inventory:[], equipment:{ weapon:null, armor:null }
     };
+    loadGame(); // Load saved game if exists
 
     // spawn enemies
     for (let i=0;i<4;i++) spawnEnemy.call(this);
@@ -176,8 +193,10 @@
   }
 
   function dealDamageToEnemy(enemy, amount){
+    playSound(300, 0.1, 'square'); // attack sound
     const newHp = enemy.getData('hp') - amount; enemy.setData('hp', newHp);
     if (newHp <= 0){
+      playSound(150, 0.3, 'sawtooth'); // death sound
       const xp = enemy.getData('xp')||5; const gold = Phaser.Math.Between(5,18);
       enemy.destroy();
       playerData.xp += xp; playerData.gold += gold;
@@ -193,13 +212,14 @@
   }
 
   function applyDamageToPlayer(amount){
+    playSound(200, 0.15, 'triangle'); // player hurt sound
     const armor = playerData.equipment.armor?playerData.equipment.armor.hp:0;
     const final = Math.max(0, amount - Math.floor(armor/4));
     playerData.hp -= final; if (playerData.hp <= 0){ playerData.hp = Math.max(1, Math.floor(playerData.maxHp/2)); playerData.gold = Math.max(0, Math.floor(playerData.gold/2)); showFloatingText.call(this, player.x, player.y-60, 'Zginąłeś! Odbudowano HP i połowę złota', '#ff6666'); saveGame(); }
   }
 
   function checkLevelUp(){
-    const next = xpForLevel(playerData.level+1); if (playerData.xp >= next){ playerData.level++; playerData.maxHp += 8; playerData.hp = playerData.maxHp; playerData.baseAttack += 1; showFloatingText.call(this, player.x, player.y-50, `Awans! Poziom ${playerData.level}`, '#ffee66'); }
+    const next = xpForLevel(playerData.level+1); if (playerData.xp >= next){ playerData.level++; playerData.maxHp += 8; playerData.hp = playerData.maxHp; playerData.baseAttack += 1; playSound(600, 0.4, 'sine'); showFloatingText.call(this, player.x, player.y-50, `Awans! Poziom ${playerData.level}`, '#ffee66'); }
   }
 
   function xpForLevel(lvl){ return Math.floor(12*Math.pow(1.55,lvl-1)); }
@@ -230,14 +250,14 @@
 
     skillBtn.addEventListener('click', ()=>{
       const now = Date.now(); if (now < skillCooldown){ const remaining = Math.ceil((skillCooldown-now)/1000); showFloatingText.call(game.scene.scenes[0], player.x, player.y-40, `Cd: ${remaining}s`, '#ffbb66'); return; }
-      const enemy = findNearbyEnemy(80); if (!enemy){ showFloatingText.call(game.scene.scenes[0], player.x, player.y-30, 'Brak celu', '#ffcc00'); } else { const base = computeAttackDamage(); const dmg = Math.floor(base*2.2); dealDamageToEnemy.call(game.scene.scenes[0], enemy, dmg); showFloatingText.call(game.scene.scenes[0], enemy.x, enemy.y-12, `- ${dmg} (Q)`, '#ff66ff'); skillCooldown = now + 6000; }
+      const enemy = findNearbyEnemy(80); if (!enemy){ showFloatingText.call(game.scene.scenes[0], player.x, player.y-30, 'Brak celu', '#ffcc00'); } else { playSound(400, 0.25, 'square'); const base = computeAttackDamage(); const dmg = Math.floor(base*2.2); dealDamageToEnemy.call(game.scene.scenes[0], enemy, dmg); showFloatingText.call(game.scene.scenes[0], enemy.x, enemy.y-12, `- ${dmg} (Q)`, '#ff66ff'); skillCooldown = now + 6000; }
     });
 
     pickupBtn.addEventListener('click', ()=>{
       // pick nearest item
       const items = Array.from(game.scene.scenes[0].itemsOnGround ? game.scene.scenes[0].itemsOnGround.getChildren() : itemsGroup.getChildren());
       const nearby = items.find(it => Phaser.Math.Distance.Between(player.x, player.y, it.x, it.y) <= 36);
-      if (nearby){ const item = nearby.getData('item'); if (playerData.inventory.length<12){ playerData.inventory.push(item); nearby.destroy(); showFloatingText(player.x, player.y-30, `+ ${item.name}`, '#ffee88'); saveGame(); } else { showFloatingText(player.x, player.y-30, 'Ekwipunek pełny','#ff4444'); } } else { showFloatingText(player.x, player.y-30, 'Brak przedmiotu','#ffcc00'); }
+      if (nearby){ playSound(450, 0.2, 'sine'); const item = nearby.getData('item'); if (playerData.inventory.length<12){ playerData.inventory.push(item); nearby.destroy(); showFloatingText(player.x, player.y-30, `+ ${item.name}`, '#ffee88'); saveGame(); } else { showFloatingText(player.x, player.y-30, 'Ekwipunek pełny','#ff4444'); } } else { showFloatingText(player.x, player.y-30, 'Brak przedmiotu','#ffcc00'); }
     });
 
     invBtn.addEventListener('click', ()=>{
@@ -252,7 +272,7 @@
 
     function inventoryContent(){ let s = `<p>Broń: ${playerData.equipment.weapon?playerData.equipment.weapon.name:'Brak'}<br/>Zbroja: ${playerData.equipment.armor?playerData.equipment.armor.name:'Brak'}</p>`; s += '<ul>'; playerData.inventory.forEach((it,idx)=> s+=`<li>${idx+1}. ${it.name} (${it.type}) <button data-i="${idx}" class="useItem">Użyj</button></li>`); s+='</ul>'; return s; }
 
-    function shopContent(){ const shop=[{ id:'sword_1', name:'Miecz Żelazny', type:'weapon', attack:3, price:30 },{ id:'armor_1', name:'Skórzana Kirys', type:'armor', hp:6, price:28 },{ id:'potion_1', name:'Mikstura HP', type:'consumable', hp:10, price:12 }]; let s = `<p>Złoto: ${playerData.gold}</p><ul>`; shop.forEach((it,idx)=> s+=`<li>${idx+1}. ${it.name} - ${it.price} zł <button data-shop="${idx}" class="buyBtn">Kup</button></li>`); s+='</ul>'; setTimeout(()=>{ document.querySelectorAll('.buyBtn').forEach(b=> b.addEventListener('click', (ev)=>{ const idx = parseInt(b.getAttribute('data-shop')); const item = [{ id:'sword_1', name:'Miecz Żelazny', type:'weapon', attack:3, price:30 },{ id:'armor_1', name:'Skórzana Kirys', type:'armor', hp:6, price:28 },{ id:'potion_1', name:'Mikstura HP', type:'consumable', hp:10, price:12 }][idx]; if (playerData.gold >= item.price && playerData.inventory.length<12){ playerData.gold -= item.price; playerData.inventory.push(Object.assign({}, item, { id: item.id + '_' + Date.now() })); showFloatingText.call(game.scene.scenes[0], player.x, player.y-30, `Kupiono: ${item.name}`, '#88ff88'); saveGame(); panel.querySelector('p').innerText = `Złoto: ${playerData.gold}`; } else { showFloatingText.call(game.scene.scenes[0], player.x, player.y-30, `Brak złota / brak miejsca`, '#ff4444'); } })); },10); return s; }
+    function shopContent(){ const shop=[{ id:'sword_1', name:'Miecz Żelazny', type:'weapon', attack:3, price:30 },{ id:'armor_1', name:'Skórzana Kirys', type:'armor', hp:6, price:28 },{ id:'potion_1', name:'Mikstura HP', type:'consumable', hp:10, price:12 }]; let s = `<p>Złoto: ${playerData.gold}</p><ul>`; shop.forEach((it,idx)=> s+=`<li>${idx+1}. ${it.name} - ${it.price} zł <button data-shop="${idx}" class="buyBtn">Kup</button></li>`); s+='</ul>'; setTimeout(()=>{ document.querySelectorAll('.buyBtn').forEach(b=> b.addEventListener('click', (ev)=>{ const idx = parseInt(b.getAttribute('data-shop')); const item = [{ id:'sword_1', name:'Miecz Żelazny', type:'weapon', attack:3, price:30 },{ id:'armor_1', name:'Skórzana Kirys', type:'armor', hp:6, price:28 },{ id:'potion_1', name:'Mikstura HP', type:'consumable', hp:10, price:12 }][idx]; if (playerData.gold >= item.price && playerData.inventory.length<12){ playSound(500, 0.2, 'sine'); playerData.gold -= item.price; playerData.inventory.push(Object.assign({}, item, { id: item.id + '_' + Date.now() })); showFloatingText.call(game.scene.scenes[0], player.x, player.y-30, `Kupiono: ${item.name}`, '#88ff88'); saveGame(); panel.querySelector('p').innerText = `Złoto: ${playerData.gold}`; } else { showFloatingText.call(game.scene.scenes[0], player.x, player.y-30, `Brak złota / brak miejsca`, '#ff4444'); } })); },10); return s; }
 
     // delegated handler for use buttons inside panel
     document.addEventListener('click', function(e){ if (e.target && e.target.classList.contains('useItem')){ const idx = parseInt(e.target.getAttribute('data-i')); const item = playerData.inventory[idx]; if (!item) return; if (item.type==='consumable'){ playerData.hp = Math.min(playerData.maxHp, playerData.hp + (item.hp||0)); playerData.inventory.splice(idx,1); showFloatingText(player.x, player.y-30, `+ ${item.hp} HP`, '#88ff88'); saveGame(); panel.querySelector('ul').removeChild(e.target.parentElement); } else if (item.type==='weapon'){ const prev = playerData.equipment.weapon; playerData.equipment.weapon = item; playerData.inventory.splice(idx,1); if (prev) playerData.inventory.push(prev); showFloatingText(player.x, player.y-30, `Wyposażono: ${item.name}`, '#ffee88'); saveGame(); } else if (item.type==='armor'){ const prev = playerData.equipment.armor; playerData.equipment.armor = item; playerData.inventory.splice(idx,1); if (prev) playerData.inventory.push(prev); showFloatingText(player.x, player.y-30, `Założono: ${item.name}`, '#ffee88'); saveGame(); } }
