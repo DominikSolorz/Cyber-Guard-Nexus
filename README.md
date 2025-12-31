@@ -1,19 +1,36 @@
-# Cyber-Guard-Nexus
-modular security &amp; AI platform for monitoring automaton and system integration 
+# Margonem-like (polski prototyp) — rozszerzona wersja
 
-# Cyber Guard Nexus
-Cyber Guard Nexus to nowoczesna platforma technologiczna typu **security / AI / monitoring hub**, zaprojektowana jako modularny system do zarządzania danymi, automatyzacji i integracji usług w czasie rzeczywistym.
-Projekt rozwijany jest jako fundament pod:- aplikację webową- backend API- integracje AI- narzędzia analityczne i automatyzacyjne
+To jest rozszerzony prototyp gry single-player w przeglądarce, w stylu klasycznych RPG. Interfejs i komunikaty są w języku polskim.
 
-## Cel projektu
-Celem Cyber Guard Nexus jest stworzenie **centralnego rdzenia (Nexus)**, który:- integruje różne źródła danych,- umożliwia komunikację AI ↔ system ↔ użytkownik,- pozwala na dalszą rozbudowę bez przepisywania architektury.
-Projekt **nie jest demo** ani proof-of-concept – to baza pod realny produkt.
+Funkcje dodane (wersja 0.2.0):
+- Automatyczny zapis gry w localStorage (stan: HP, poziom, XP, złoto, ekwipunek, wyposażenie).
+- System ekwipunku (broń + zbroja), przedmioty konsumowalne (mikstury).
+- Przedmioty dropią z potworów i można je podnieść klawiszem E.
+- Prosty sklep (B) — kupowanie przedmiotów za złoto.
+- Ulepszony system walki: umiejętność specjalna (Q) z cooldownem, krytyczne trafienia.
+- AI potworów: poruszają się w kierunku gracza i zadają obrażenia przy kontakcie.
+- Zastąpienie geometrycznych figur wygenerowanymi teksturami (bez zasobów zewnętrznych).
+- Interfejs inventory (I) i prosty HUD.
 
-## Architektura (w skrócie)
-- Frontend: HTML / CSS / JavaScript (docelowo framework)- Backend: API (Node.js / Python – w trakcie decyzji)- AI: integracje z zewnętrznymi modelami- Deploy: Render / AWS (w trakcie konfiguracji)- Repozytorium: GitHub (konto prywatne)
+Sterowanie:
+- Ruch: WASD / strzałki
+- Atak podstawowy: SPACJA
+- Umiejętność specjalna: Q
+- Podnieś przedmiot: E (gdy jesteś obok przedmiotu)
+- Otwórz/zamknij sklep: B
+- Otwórz/zamknij ekwipunek: I
+- Kup/Użyj przedmiotu: naciśnij numer (1-5) przy otwartym sklepie/ekwipunku
 
-## Status projektu
- **W trakcie aktywnego rozwoju**
-Obecnie:- inicjalizacja repozytorium- porządkowanie architektury- konfiguracja środowisk- przygotowanie do deployu
+Uruchomienie:
+1. npm install
+2. npm run dev
+3. Otwórz w przeglądarce: http://localhost:5173
 
-## Struktura repozytorium (planowana)
+Pomysły na dalsze rozszerzenia:
+- grafiki pixel-art zamiast generowanych kształtów (mogę przygotować placeholdery lub kartę z assetami)
+- efekty dźwiękowe i muzyka
+- questy i NPC
+- zapis do backendu (konto i cross-device)
+- multiplayer (Node.js + Socket.IO / Elixir + Channels)
+
+Jeśli chcesz, mogę podmienić wygląd elementów na pixel-art i dodać animacje, dodać klikane UI lub utworzyć PR z tą wersją.
