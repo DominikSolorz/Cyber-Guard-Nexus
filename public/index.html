@@ -1,45 +1,29 @@
-<!-- FILE: public/index.html -->
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Guard Nexus | Secure Your Future</title>
-    <link rel="stylesheet" href="assets/css/app.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Margonem-like (PL) — prototyp</title>
+  <link rel="stylesheet" href="./styles.css">
+  <!-- Phaser from CDN -->
+  <script src="https://unpkg.com/phaser@3.60.0/dist/phaser.js"></script>
 </head>
 <body>
-    <header class="site-header">
-        <div class="container">
-            <a href="./" class="logo">Cyber Guard Nexus</a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="./login/">Login</a></li>
-                    <li><a href="./register/">Register</a></li>
-                    <li><a href="./privacy/">Privacy</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+  <div id="game"></div>
 
-    <main class="main-content">
-        <div class="container">
-            <section class="hero">
-                <h1>Next-Gen Digital Defense</h1>
-                <p class="hero-subtitle">Advanced threat detection and identity protection for the modern web. Secure your perimeter today.</p>
-                <div class="cta-group">
-                    <a href="./register/" class="btn btn-primary">Initialize System</a>
-                    <a href="./login/" class="btn btn-outline">Access Portal</a>
-                </div>
-            </section>
-        </div>
-    </main>
+  <!-- on-screen controls -->
+  <div id="controls">
+    <button id="attackBtn" class="big-btn">ATAK</button>
+    <button id="skillBtn" class="big-btn">UMIEJ.</button>
+    <button id="pickupBtn" class="small-btn">WEŹ</button>
+    <button id="invBtn" class="small-btn">EQ</button>
+    <button id="shopBtn" class="small-btn">SKLP</button>
+  </div>
 
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2024 Cyber Guard Nexus. All systems operational.</p>
-        </div>
-    </footer>
+  <!-- simple overlays for inventory/shop -->
+  <div id="overlay" class="hidden"></div>
+  <div id="panel" class="hidden"></div>
 
-    <script src="assets/js/app.js"></script>
+  <script src="./js/game.js"></script>
 </body>
 </html>

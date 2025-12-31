@@ -1,0 +1,13 @@
+html,body,#game { height: 100%; margin: 0; padding: 0; background: #101020; }
+body { font-family: Arial, Helvetica, sans-serif; -webkit-tap-highlight-color: transparent; }
+#game { position: relative; }
+#controls { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+.big-btn { width: 92px; height: 48px; border-radius: 8px; background: #ff6f61; color: #fff; font-weight: bold; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+.small-btn { width: 64px; height: 36px; border-radius: 6px; background: #4a90e2; color: #fff; border: none; }
+.hidden { display: none; }
+#overlay { position: absolute; left: 0; top: 0; right: 0; bottom:0; background: rgba(0,0,0,0.6); z-index: 9998; }
+#panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 90%; max-width: 480px; background: #ffffff; color: #000; padding: 12px; border-radius: 8px; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+#panel h2 { margin-top: 0; }
+@media (min-width: 900px) {
+  #controls { right: 20px; bottom: 20px; }
+}
