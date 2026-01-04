@@ -3,7 +3,7 @@
 
 type SoundType = 'keypress' | 'success' | 'error' | 'alert' | 'notification';
 
-const SOUND_ENABLED = true;
+let soundEnabled = true;
 
 class AudioManager {
   private audioContext: AudioContext | null = null;
@@ -19,7 +19,7 @@ class AudioManager {
   }
 
   playBeep(frequency: number, duration: number, type: OscillatorType = 'sine') {
-    if (!SOUND_ENABLED || !this.audioContext) return;
+    if (!soundEnabled || !this.audioContext) return;
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
@@ -84,9 +84,9 @@ export const playSound = (soundType: SoundType) => {
 };
 
 export const enableSound = () => {
-  // Sound enable/disable toggle if needed
+  soundEnabled = true;
 };
 
 export const disableSound = () => {
-  // Sound enable/disable toggle if needed
+  soundEnabled = false;
 };
