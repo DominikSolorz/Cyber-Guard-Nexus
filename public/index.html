@@ -4,15 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Hacking Simulator</title>
+    <title>Cyber Guard Nexus - Hacking Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="simulator">
-        <h1>Welcome to the Hacking Simulator</h1>
-        <textarea id="console" readonly>Initializing...</textarea>
-        <input id="input" type="text" placeholder="Enter your command">
-        <button id="submit">Execute</button>
+    <!-- Disclaimer Banner -->
+    <div id="disclaimer">
+        ⚠️ EDUCATIONAL/ENTERTAINMENT PURPOSES ONLY - This is a fictional simulation ⚠️
     </div>
+
+    <!-- Main Container -->
+    <div id="app-container">
+        <!-- Left Panel: Status & Scenarios -->
+        <div id="left-panel">
+            <div id="status-panel">
+                <h3>SYSTEM STATUS</h3>
+                <div class="status-item">
+                    <span class="label">Connection:</span>
+                    <span id="connection-status" class="value disconnected">DISCONNECTED</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Trace Level:</span>
+                    <span id="trace-level" class="value">0%</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Data Exfiltrated:</span>
+                    <span id="data-exfil" class="value">0 KB</span>
+                </div>
+            </div>
+
+            <div id="scenario-panel">
+                <h3>SELECT SCENARIO</h3>
+                <button class="scenario-btn" data-scenario="corporate">Corporate Network</button>
+                <button class="scenario-btn" data-scenario="wifi">Wi-Fi Crack</button>
+                <button class="scenario-btn" data-scenario="bank">Bank Heist</button>
+                <button class="scenario-btn" data-scenario="manual">Manual Mode</button>
+            </div>
+
+            <div id="commands-help">
+                <h3>AVAILABLE COMMANDS</h3>
+                <div class="help-text">
+                    • nmap scan<br>
+                    • sqlmap injection<br>
+                    • curl attack<br>
+                    • ping flood<br>
+                    • help<br>
+                    • clear
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel: Terminal -->
+        <div id="center-panel">
+            <div id="terminal-header">
+                <span class="terminal-title">CYBER GUARD NEXUS v2.0</span>
+                <span class="terminal-controls">
+                    <span class="control-btn minimize">─</span>
+                    <span class="control-btn maximize">□</span>
+                    <span class="control-btn close">×</span>
+                </span>
+            </div>
+            <div id="terminal-container">
+                <div id="terminal-output"></div>
+                <div id="input-line">
+                    <span class="prompt">root@nexus:~$</span>
+                    <input id="terminal-input" type="text" autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Network Visualization -->
+        <div id="right-panel">
+            <div id="network-viz-container">
+                <canvas id="network-canvas"></canvas>
+            </div>
+            <div id="trace-alert" class="hidden">
+                <div class="alert-header">⚠️ TRACE DETECTED ⚠️</div>
+                <div class="alert-body">
+                    <div class="alert-counter" id="alert-counter">100%</div>
+                    <div class="alert-message">DISCONNECT IMMEDIATELY!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements (hidden) -->
+    <audio id="audio-type" preload="auto">
+        <source src="data:audio/wav;base64,UklGRh4AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQA=" type="audio/wav">
+    </audio>
+    <audio id="audio-alert" preload="auto">
+        <source src="data:audio/wav;base64,UklGRh4AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQA=" type="audio/wav">
+    </audio>
+    <audio id="audio-connect" preload="auto">
+        <source src="data:audio/wav;base64,UklGRh4AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQA=" type="audio/wav">
+    </audio>
+
     <script src="script.js"></script>
 </body>
 </html>
