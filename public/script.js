@@ -3,6 +3,11 @@
 // Educational Purposes Only
 // ============================================
 
+// Configuration
+const MATRIX_CHARS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+const TYPING_DELAY_MIN = 50;
+const TYPING_DELAY_MAX = 100;
+
 class HackingSimulator {
     constructor() {
         this.console = document.getElementById('console');
@@ -76,7 +81,7 @@ class HackingSimulator {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
-        const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+        const chars = MATRIX_CHARS;
         const fontSize = 14;
         const columns = canvas.width / fontSize;
         const drops = Array(Math.floor(columns)).fill(1);
@@ -109,6 +114,8 @@ class HackingSimulator {
     
     setupThreeJS() {
         // Check if THREE.js is available
+        // Note: Three.js is loaded from CDN. For production, consider using a local copy
+        // or npm package with integrity checks for better security.
         if (typeof THREE === 'undefined') {
             console.warn('Three.js not loaded - 3D visualization disabled');
             return;
@@ -186,7 +193,7 @@ class HackingSimulator {
         
         for (let char of command) {
             this.input.value += char;
-            await this.sleep(50 + Math.random() * 100);
+            await this.sleep(TYPING_DELAY_MIN + Math.random() * TYPING_DELAY_MAX);
         }
         
         await this.sleep(300);

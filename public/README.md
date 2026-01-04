@@ -205,20 +205,34 @@ Then open: http://localhost:8000
 ## File Structure
 
 ```
-public/
-├── index.html          # Main HTML file with UI structure
-├── styles.css          # Complete styling with animations
-├── script.js           # Main simulator logic and functionality
-└── README.md          # This documentation file
+Cyber-Guard-Nexus/
+├── public/             # Main hacking simulator application
+│   ├── index.html      # Main HTML file with UI structure
+│   ├── styles.css      # Complete styling with animations
+│   ├── script.js       # Main simulator logic and functionality
+│   └── README.md       # This documentation file
+├── src/                # Additional source files (Vite project)
+├── package.json        # Node.js dependencies (optional)
+├── vite.config.ts      # Vite configuration (optional)
+└── index.html          # Root index (redirects or separate app)
 ```
+
+**Note**: The hacking simulator is self-contained in the `public/` directory and can run independently.
 
 ## Technology Stack
 
 - **HTML5**: Semantic markup and structure
 - **CSS3**: Advanced styling with animations and effects
 - **JavaScript (ES6+)**: Modern vanilla JavaScript
-- **Three.js**: 3D graphics and visualizations
+- **Three.js**: 3D graphics and visualizations (loaded from CDN)
 - **Canvas API**: Matrix background effect
+
+### Security Note
+
+Three.js is currently loaded from the unpkg CDN for simplicity. For production use, consider:
+- Downloading Three.js locally for better security
+- Using npm/package manager with SRI (Subresource Integrity) checks
+- Implementing Content Security Policy (CSP) headers
 
 ## Educational Use Cases
 
