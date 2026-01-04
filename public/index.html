@@ -4,15 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Hacking Simulator</title>
+    <title>Cyber Guard Nexus - Advanced Hacking Simulator</title>
+    <script src="https://unpkg.com/three@0.159.0/build/three.min.js"></script>
 </head>
 <body>
+    <!-- Matrix Background Canvas -->
+    <canvas id="matrix-bg"></canvas>
+    
+    <!-- 3D Visualization Canvas -->
+    <div id="three-container"></div>
+    
+    <!-- Main Simulator Interface -->
     <div id="simulator">
-        <h1>Welcome to the Hacking Simulator</h1>
-        <textarea id="console" readonly>Initializing...</textarea>
-        <input id="input" type="text" placeholder="Enter your command">
-        <button id="submit">Execute</button>
+        <!-- Disclaimer -->
+        <div id="disclaimer">
+            <h2>⚠️ EDUCATIONAL PURPOSES ONLY ⚠️</h2>
+            <p>This is a simulation tool for educational purposes. Unauthorized access to computer systems is illegal.</p>
+            <button id="accept-disclaimer">I Understand - Continue</button>
+        </div>
+        
+        <!-- Main Interface (hidden until disclaimer accepted) -->
+        <div id="main-interface" style="display: none;">
+            <header>
+                <h1><span class="glitch" data-text="CYBER GUARD NEXUS">CYBER GUARD NEXUS</span></h1>
+                <div id="status-bar">
+                    <span id="trace-status">Trace: <span class="safe">CLEAR</span></span>
+                    <span id="connection-status">Connection: <span class="disconnected">OFFLINE</span></span>
+                    <span id="time-display"></span>
+                </div>
+            </header>
+            
+            <!-- Scenario Selection -->
+            <div id="scenario-panel">
+                <h3>Select Mission:</h3>
+                <button class="scenario-btn" data-scenario="corporate">Corporate Network Breach</button>
+                <button class="scenario-btn" data-scenario="wifi">Wi-Fi Network Attack</button>
+                <button class="scenario-btn" data-scenario="custom">Custom Session</button>
+            </div>
+            
+            <!-- Console Output -->
+            <div id="console-wrapper">
+                <div id="console-header">
+                    <span>TERMINAL v2.4.1</span>
+                    <div id="console-controls">
+                        <span class="control-btn" id="minimize">_</span>
+                        <span class="control-btn" id="maximize">□</span>
+                        <span class="control-btn close" id="close-console">×</span>
+                    </div>
+                </div>
+                <div id="console" class="terminal"></div>
+                <div id="input-line">
+                    <span class="prompt">root@cyber-nexus:~$</span>
+                    <input id="input" type="text" autocomplete="off" autofocus>
+                </div>
+            </div>
+            
+            <!-- Stats Panel -->
+            <div id="stats-panel">
+                <h3>Mission Stats</h3>
+                <div class="stat-item">
+                    <span>Ports Scanned:</span>
+                    <span id="ports-scanned">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Vulnerabilities Found:</span>
+                    <span id="vulns-found">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Access Level:</span>
+                    <span id="access-level">NONE</span>
+                </div>
+                <div class="stat-item">
+                    <span>Trace Progress:</span>
+                    <div id="trace-bar">
+                        <div id="trace-fill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Commands -->
+            <div id="quick-commands">
+                <h4>Quick Actions:</h4>
+                <button class="quick-cmd" data-cmd="help">Help</button>
+                <button class="quick-cmd" data-cmd="nmap scan">Scan Network</button>
+                <button class="quick-cmd" data-cmd="port brute">Brute Force</button>
+                <button class="quick-cmd" data-cmd="server exploit">Exploit Server</button>
+            </div>
+        </div>
     </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
