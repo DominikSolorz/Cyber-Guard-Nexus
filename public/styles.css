@@ -1,45 +1,279 @@
+/* Main Body Styles - Dark Theme with Neon Aesthetics */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #000000;
-    color: #00ff00;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+    color: #00FF00;
     margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
 }
 
+/* Animated background matrix effect */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: -1;
+    animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+}
+
+/* Container */
 #simulator {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-#console {
-    width: 500px;
-    height: 300px;
-    background-color: #000;
-    color: #0f0;
-    border: 1px solid #0f0;
-    margin-bottom: 20px;
-    font-family: monospace;
-    resize: none;
+/* Header with glow effect */
+h1 {
+    font-size: 2.5em;
+    color: #00FF00;
+    text-shadow: 
+        0 0 10px #00FF00,
+        0 0 20px #00FF00,
+        0 0 30px #00FF00,
+        0 0 40px #00FF00;
+    margin-bottom: 10px;
+    animation: textGlow 2s ease-in-out infinite alternate;
+    letter-spacing: 3px;
 }
 
-#input {
-    width: 400px;
-    padding: 10px;
-    margin-right: 10px;
-    font-family: monospace;
+@keyframes textGlow {
+    from { text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00, 0 0 30px #00FF00; }
+    to { text-shadow: 0 0 20px #00FF00, 0 0 30px #00FF00, 0 0 40px #00FF00, 0 0 50px #00FF00; }
 }
 
-#submit {
+/* Disclaimer */
+.disclaimer {
+    background: rgba(255, 69, 0, 0.1);
+    border: 2px solid #FF4500;
+    border-radius: 5px;
     padding: 10px 20px;
-    font-family: monospace;
-    background-color: #0f0;
-    color: #000;
-    border: none;
+    margin-bottom: 20px;
+    color: #FF4500;
+    font-size: 0.9em;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(255, 69, 0, 0.3);
+    animation: pulseWarning 2s ease-in-out infinite;
+}
+
+@keyframes pulseWarning {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
+/* Console/Terminal */
+#console {
+    width: 90%;
+    max-width: 800px;
+    height: 400px;
+    background-color: #0a0a0a;
+    color: #00FF00;
+    border: 2px solid #00FF00;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    padding: 15px;
+    resize: none;
+    overflow-y: auto;
+    box-shadow: 
+        0 0 10px rgba(0, 255, 0, 0.5),
+        inset 0 0 20px rgba(0, 255, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+#console:focus {
+    outline: none;
+    border-color: #00BFFF;
+    box-shadow: 
+        0 0 20px rgba(0, 191, 255, 0.6),
+        inset 0 0 20px rgba(0, 191, 255, 0.1);
+}
+
+/* Scrollbar styling */
+#console::-webkit-scrollbar {
+    width: 10px;
+}
+
+#console::-webkit-scrollbar-track {
+    background: #0a0a0a;
+    border-left: 1px solid #00FF00;
+}
+
+#console::-webkit-scrollbar-thumb {
+    background: #00FF00;
+    border-radius: 5px;
+}
+
+#console::-webkit-scrollbar-thumb:hover {
+    background: #00BFFF;
+}
+
+/* Input container */
+.input-container {
+    display: flex;
+    width: 90%;
+    max-width: 800px;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+/* Input field */
+#input {
+    flex: 1;
+    padding: 12px 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    background-color: #0a0a0a;
+    color: #00FF00;
+    border: 2px solid #00FF00;
+    border-radius: 5px;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+#input:focus {
+    border-color: #00BFFF;
+    box-shadow: 
+        0 0 10px rgba(0, 191, 255, 0.5),
+        inset 0 0 10px rgba(0, 191, 255, 0.1);
+}
+
+#input::placeholder {
+    color: rgba(0, 255, 0, 0.5);
+}
+
+/* Submit button */
+#submit {
+    padding: 12px 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #00FF00;
+    color: #000000;
+    border: 2px solid #00FF00;
+    border-radius: 5px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 #submit:hover {
-    background-color: #00d400;
+    background-color: #00BFFF;
+    border-color: #00BFFF;
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.8);
+    transform: translateY(-2px);
+}
+
+#submit:active {
+    transform: translateY(0);
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+}
+
+/* Status bar */
+.status-bar {
+    width: 90%;
+    max-width: 800px;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(0, 255, 0, 0.05);
+    border: 1px solid #00FF00;
+    border-radius: 5px;
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+.status-item {
+    color: #00BFFF;
+}
+
+.status-item.alert {
+    color: #FF4500;
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0.5; }
+}
+
+/* Trace countdown */
+#trace-timer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background: rgba(255, 69, 0, 0.2);
+    border: 2px solid #FF4500;
+    border-radius: 5px;
+    color: #FF4500;
+    font-size: 18px;
+    font-weight: bold;
+    display: none;
+    box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+    animation: pulseTrace 1s ease-in-out infinite;
+}
+
+@keyframes pulseTrace {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* 3D Canvas container */
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    opacity: 0.3;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.8em;
+    }
+    
+    #console {
+        height: 300px;
+        font-size: 12px;
+    }
+    
+    .input-container {
+        flex-direction: column;
+    }
+    
+    #input, #submit {
+        width: 100%;
+    }
+    
+    .status-bar {
+        flex-direction: column;
+        gap: 5px;
+    }
 }
