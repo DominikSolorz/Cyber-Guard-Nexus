@@ -37,6 +37,12 @@ const servers = [
 // 3D BACKGROUND VISUALIZATION (Three.js)
 // ============================================================================
 function initThreeJS() {
+    // Check if THREE is available
+    if (typeof THREE === 'undefined') {
+        console.warn('Three.js not loaded. Skipping 3D visualization.');
+        return;
+    }
+    
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
