@@ -4,15 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Hacking Simulator</title>
+    <title>Cyber Guard Nexus - Hacking Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+    <!-- 3D Background Canvas -->
+    <div id="canvas-container"></div>
+    
+    <!-- Trace Timer -->
+    <div id="trace-timer">TRACE: <span id="timer-value">--:--</span></div>
+    
     <div id="simulator">
-        <h1>Welcome to the Hacking Simulator</h1>
-        <textarea id="console" readonly>Initializing...</textarea>
-        <input id="input" type="text" placeholder="Enter your command">
-        <button id="submit">Execute</button>
+        <h1>⚡ CYBER GUARD NEXUS ⚡</h1>
+        
+        <!-- Ethical Disclaimer -->
+        <div class="disclaimer">
+            ⚠️ EDUCATIONAL & ENTERTAINMENT PURPOSES ONLY ⚠️<br>
+            This simulator is a fictional representation. Do not attempt real hacking activities.
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">STATUS: <span id="status">STANDBY</span></div>
+            <div class="status-item">SECURITY: <span id="security">NOMINAL</span></div>
+            <div class="status-item">CONNECTIONS: <span id="connections">0</span></div>
+        </div>
+        
+        <!-- Console -->
+        <textarea id="console" readonly>╔═══════════════════════════════════════════════════════════════╗
+║          CYBER GUARD NEXUS - SECURITY SIMULATOR v2.0          ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Initializing system...
+Loading modules... [OK]
+Establishing secure connection... [OK]
+
+Type 'help' for available commands.
+Ready for input >
+</textarea>
+        
+        <!-- Input Area -->
+        <div class="input-container">
+            <input id="input" type="text" placeholder="Enter command... (try 'help')" autocomplete="off">
+            <button id="submit">EXECUTE</button>
+        </div>
     </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
