@@ -4,15 +4,261 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Hacking Simulator</title>
+    <title>Cyber Guard Nexus - Hacking Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="simulator">
-        <h1>Welcome to the Hacking Simulator</h1>
-        <textarea id="console" readonly>Initializing...</textarea>
-        <input id="input" type="text" placeholder="Enter your command">
-        <button id="submit">Execute</button>
+    <!-- Disclaimer Modal -->
+    <div id="disclaimer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ LEGAL DISCLAIMER</h2>
+            </div>
+            <div class="modal-body">
+                <p><strong>EDUCATIONAL AND ENTERTAINMENT PURPOSES ONLY</strong></p>
+                <p>This is a <strong>SIMULATION</strong> for educational and entertainment purposes only.</p>
+                <ul>
+                    <li>All activities within this simulator are completely fictional</li>
+                    <li>No real systems, networks, or data are accessed</li>
+                    <li>This tool does not promote or facilitate illegal activities</li>
+                    <li>Unauthorized access to computer systems is illegal</li>
+                    <li>Use this simulator responsibly and ethically</li>
+                </ul>
+                <p class="warning-text">By clicking "I Understand", you acknowledge that you will use this tool for educational purposes only and understand the legal implications of real hacking activities.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="accept-disclaimer" class="btn btn-primary">I Understand</button>
+            </div>
+        </div>
     </div>
+
+    <!-- Main Simulator Interface -->
+    <div id="simulator" style="display: none;">
+        <!-- Header -->
+        <header class="sim-header">
+            <div class="header-left">
+                <h1 class="logo">🛡️ CYBER GUARD NEXUS</h1>
+                <span class="status-indicator" id="status">
+                    <span class="status-dot"></span> SYSTEM ACTIVE
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="system-time" id="system-time"></div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <button class="tab-btn active" data-tab="terminal">Terminal</button>
+            <button class="tab-btn" data-tab="network">Network Map</button>
+            <button class="tab-btn" data-tab="targets">Target Modules</button>
+            <button class="tab-btn" data-tab="tools">Hacking Tools</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="content-wrapper">
+            <!-- Terminal Tab -->
+            <div id="terminal" class="tab-content active">
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <span class="terminal-title">Main Terminal</span>
+                        <div class="terminal-controls">
+                            <span class="control-btn minimize">─</span>
+                            <span class="control-btn maximize">□</span>
+                            <span class="control-btn close">✕</span>
+                        </div>
+                    </div>
+                    <div class="terminal-body">
+                        <div id="console" class="console-output"></div>
+                        <div class="console-input-line">
+                            <span class="prompt">root@cyberguard:~$</span>
+                            <input type="text" id="input" class="console-input" autocomplete="off" spellcheck="false">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-help">
+                    <h3>Available Commands:</h3>
+                    <div class="help-grid">
+                        <div class="help-item"><code>help</code> - Show all commands</div>
+                        <div class="help-item"><code>scan [target]</code> - Port scan</div>
+                        <div class="help-item"><code>connect [ip]</code> - Connect to server</div>
+                        <div class="help-item"><code>crack [target]</code> - Brute force attack</div>
+                        <div class="help-item"><code>exploit [vuln]</code> - Exploit vulnerability</div>
+                        <div class="help-item"><code>status</code> - System status</div>
+                        <div class="help-item"><code>clear</code> - Clear terminal</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Map Tab -->
+            <div id="network" class="tab-content">
+                <div class="network-container">
+                    <div id="network-canvas"></div>
+                    <div class="network-info">
+                        <h3>Network Information</h3>
+                        <div id="node-details">
+                            <p>Hover over nodes to see details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Modules Tab -->
+            <div id="targets" class="tab-content">
+                <div class="modules-grid">
+                    <div class="module-card" data-module="pc">
+                        <div class="module-icon">💻</div>
+                        <h3>Personal Computer</h3>
+                        <p>Simulated home PC system</p>
+                        <button class="btn btn-outline module-launch">Launch</button>
+                    </div>
+                    <div class="module-card" data-module="bank">
+                        <div class="module-icon">🏦</div>
+                        <h3>Bank Portal</h3>
+                        <p>Fake banking website</p>
+                        <button class="btn btn-outline module-launch">Launch</button>
+                    </div>
+                    <div class="module-card" data-module="server">
+                        <div class="module-icon">🖥️</div>
+                        <h3>Server Terminal</h3>
+                        <p>Remote server access</p>
+                        <button class="btn btn-outline module-launch">Launch</button>
+                    </div>
+                    <div class="module-card" data-module="email">
+                        <div class="module-icon">📧</div>
+                        <h3>Email Server</h3>
+                        <p>Corporate email system</p>
+                        <button class="btn btn-outline module-launch">Launch</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hacking Tools Tab -->
+            <div id="tools" class="tab-content">
+                <div class="tools-container">
+                    <div class="tool-section">
+                        <h3>Port Scanner</h3>
+                        <div class="tool-controls">
+                            <input type="text" id="scan-target" placeholder="Enter IP address (e.g., 192.168.1.1)" class="form-input">
+                            <button id="start-scan" class="btn btn-primary">Start Scan</button>
+                        </div>
+                        <div id="scan-results" class="tool-output"></div>
+                    </div>
+
+                    <div class="tool-section">
+                        <h3>Brute Force Attack</h3>
+                        <div class="tool-controls">
+                            <input type="text" id="bruteforce-target" placeholder="Target system" class="form-input">
+                            <select id="bruteforce-type" class="form-input">
+                                <option value="ssh">SSH</option>
+                                <option value="ftp">FTP</option>
+                                <option value="http">HTTP</option>
+                            </select>
+                            <button id="start-bruteforce" class="btn btn-primary">Start Attack</button>
+                        </div>
+                        <div id="bruteforce-progress" class="progress-container">
+                            <div class="progress-bar" id="bruteforce-bar"></div>
+                            <span id="bruteforce-status" class="progress-text">Ready</span>
+                        </div>
+                    </div>
+
+                    <div class="tool-section">
+                        <h3>Packet Sniffer</h3>
+                        <div class="tool-controls">
+                            <select id="sniffer-interface" class="form-input">
+                                <option value="eth0">eth0 - Ethernet</option>
+                                <option value="wlan0">wlan0 - Wireless</option>
+                                <option value="lo">lo - Loopback</option>
+                            </select>
+                            <button id="start-sniffer" class="btn btn-primary">Start Capture</button>
+                            <button id="stop-sniffer" class="btn btn-outline" disabled>Stop</button>
+                        </div>
+                        <div id="packet-output" class="tool-output packet-feed"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module Windows (Hidden by default) -->
+        <div id="pc-window" class="module-window" style="display: none;">
+            <div class="window-header">
+                <span class="window-title">Personal Computer - Windows 10</span>
+                <button class="window-close" data-window="pc-window">✕</button>
+            </div>
+            <div class="window-body">
+                <div class="pc-desktop">
+                    <div class="pc-folder" data-folder="documents">📁 Documents</div>
+                    <div class="pc-folder" data-folder="downloads">📁 Downloads</div>
+                    <div class="pc-folder" data-folder="photos">📁 Photos</div>
+                    <div class="pc-file" data-file="passwords.txt">📄 passwords.txt</div>
+                </div>
+                <div id="pc-content" class="pc-content"></div>
+            </div>
+        </div>
+
+        <div id="bank-window" class="module-window" style="display: none;">
+            <div class="window-header">
+                <span class="window-title">SecureBank Online - Login Portal</span>
+                <button class="window-close" data-window="bank-window">✕</button>
+            </div>
+            <div class="window-body bank-body">
+                <div class="bank-logo">🏦 SecureBank</div>
+                <form id="bank-login-form" class="bank-form">
+                    <input type="text" placeholder="Account Number" class="form-input" id="bank-account">
+                    <input type="password" placeholder="Password" class="form-input" id="bank-password">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <div id="bank-dashboard" style="display: none;">
+                    <h3>Account Dashboard</h3>
+                    <div class="account-info">
+                        <p><strong>Account:</strong> <span id="account-number"></span></p>
+                        <p><strong>Balance:</strong> $<span id="account-balance"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="server-window" class="module-window" style="display: none;">
+            <div class="window-header">
+                <span class="window-title">Server Terminal - root@target-server</span>
+                <button class="window-close" data-window="server-window">✕</button>
+            </div>
+            <div class="window-body">
+                <div class="server-terminal">
+                    <div id="server-output" class="console-output"></div>
+                    <div class="console-input-line">
+                        <span class="prompt">root@target:~#</span>
+                        <input type="text" id="server-input" class="console-input" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="email-window" class="module-window" style="display: none;">
+            <div class="window-header">
+                <span class="window-title">Corporate Email - Inbox</span>
+                <button class="window-close" data-window="email-window">✕</button>
+            </div>
+            <div class="window-body">
+                <div class="email-list" id="email-list">
+                    <div class="email-item" data-email="0">
+                        <strong>From:</strong> admin@targetcorp.com<br>
+                        <strong>Subject:</strong> Server Maintenance Schedule
+                    </div>
+                    <div class="email-item" data-email="1">
+                        <strong>From:</strong> security@targetcorp.com<br>
+                        <strong>Subject:</strong> Password Reset Required
+                    </div>
+                    <div class="email-item" data-email="2">
+                        <strong>From:</strong> hr@targetcorp.com<br>
+                        <strong>Subject:</strong> Employee Database Access
+                    </div>
+                </div>
+                <div id="email-content" class="email-content" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
