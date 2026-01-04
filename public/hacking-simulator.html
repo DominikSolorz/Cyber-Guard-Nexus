@@ -413,10 +413,21 @@
     </div>
 
     <script>
+        // Constants
+        const TYPING_SOUND_THRESHOLD = 20;
+        const BRUTE_FORCE_TOTAL = 1000;
+        const BRUTE_FORCE_BATCH_SIZE = 100;
+
         // Sound generation using Web Audio API
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let audioContext;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.warn('Web Audio API not supported, sounds will be disabled');
+        }
 
         function playTypingSound() {
+            if (!audioContext) return;
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
@@ -434,6 +445,7 @@
         }
 
         function playSuccessSound() {
+            if (!audioContext) return;
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
@@ -452,6 +464,7 @@
         }
 
         function playErrorSound() {
+            if (!audioContext) return;
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
@@ -508,7 +521,7 @@
             terminal.appendChild(entry);
             terminal.scrollTop = terminal.scrollHeight;
 
-            if (animate && message.length > 20) {
+            if (animate && message.length > TYPING_SOUND_THRESHOLD) {
                 playTypingSound();
             }
         }
@@ -662,11 +675,8 @@
             addLog(`Starting brute force attack on ${target}...`, 'warning');
             await sleep(500);
             
-            const total = 1000;
-            const batchSize = 100;
-            
-            for (let i = 0; i < total; i += batchSize) {
-                const percent = Math.min(100, Math.round(((i + batchSize) / total) * 100));
+            for (let i = 0; i < BRUTE_FORCE_TOTAL; i += BRUTE_FORCE_BATCH_SIZE) {
+                const percent = Math.min(100, Math.round(((i + BRUTE_FORCE_BATCH_SIZE) / BRUTE_FORCE_TOTAL) * 100));
                 await addTypingLog(`Testing combinations... ${percent}% complete`, 'warning', 10);
                 await sleep(400);
             }
