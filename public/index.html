@@ -4,15 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Hacking Simulator</title>
+    <title>Advanced Hacking Simulator - Educational Purpose Only</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="simulator">
-        <h1>Welcome to the Hacking Simulator</h1>
-        <textarea id="console" readonly>Initializing...</textarea>
-        <input id="input" type="text" placeholder="Enter your command">
-        <button id="submit">Execute</button>
+    <div id="disclaimer">
+        <div id="disclaimer-content">
+            <h2>⚠️ LEGAL DISCLAIMER ⚠️</h2>
+            <p>This is a <strong>SIMULATION</strong> for educational and entertainment purposes only.</p>
+            <p>No actual hacking, unauthorized access, or illegal activities are performed.</p>
+            <p>Unauthorized access to computer systems is illegal and punishable by law.</p>
+            <p>By continuing, you acknowledge this is purely fictional entertainment.</p>
+            <button id="accept-disclaimer">I Understand - Enter Simulation</button>
+        </div>
     </div>
+    
+    <div id="simulator" style="display: none;">
+        <div id="header">
+            <h1>CYBER-GUARD NEXUS - TACTICAL HACKING SIMULATOR</h1>
+            <div id="status-bar">
+                <span id="connection-status">STATUS: <span class="status-text">IDLE</span></span>
+                <span id="threat-level">THREAT: <span class="threat-text">NONE</span></span>
+                <span id="timer-display"></span>
+            </div>
+        </div>
+        
+        <div id="main-container">
+            <div id="terminal-container">
+                <div id="terminal-header">
+                    <span class="terminal-title">TERMINAL v2.0</span>
+                    <span class="terminal-controls">
+                        <span class="control-btn">_</span>
+                        <span class="control-btn">□</span>
+                        <span class="control-btn">×</span>
+                    </span>
+                </div>
+                <div id="console"></div>
+                <div id="command-line">
+                    <span class="prompt">root@nexus:~$</span>
+                    <span id="current-command"></span>
+                    <span id="cursor">_</span>
+                </div>
+            </div>
+            
+            <div id="visual-panel">
+                <div id="3d-container"></div>
+                <div id="stats-panel">
+                    <h3>SYSTEM STATISTICS</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">PACKETS SENT:</span>
+                        <span id="packets-sent" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">PORTS SCANNED:</span>
+                        <span id="ports-scanned" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ACCESS ATTEMPTS:</span>
+                        <span id="access-attempts" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">SUCCESS RATE:</span>
+                        <span id="success-rate" class="stat-value">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="alert-container"></div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
