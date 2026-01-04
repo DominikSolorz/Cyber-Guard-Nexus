@@ -24,8 +24,9 @@ const Utils = {
     },
     
     randomMAC: () => {
+        const hexChars = '0123456789ABCDEF';
         return 'XX:XX:XX:XX:XX:XX'.replace(/X/g, () => {
-            return '0123456789ABCDEF'.charAt(Math.floor(Math.random() * 16));
+            return hexChars.charAt(Math.floor(Math.random() * 16));
         });
     },
     
@@ -33,7 +34,7 @@ const Utils = {
     
     typeWriter: async (element, text, speed = 30) => {
         for (let char of text) {
-            element.innerHTML += char;
+            element.textContent += char;
             element.parentElement.scrollTop = element.parentElement.scrollHeight;
             await Utils.sleep(speed);
         }
@@ -249,15 +250,21 @@ async function scanTarget(target) {
     logToConsole(`Starting port scan on ${target}...`, 'info');
     await Utils.sleep(1000);
     
+    // Common ports with their services
     const ports = [21, 22, 23, 80, 443, 3306, 8080];
+    const openPorts = [];
+    
     for (let port of ports) {
         const status = Math.random() > 0.5 ? 'open' : 'closed';
         const service = getServiceName(port);
         logToConsole(`PORT ${port}/tcp  ${status.padEnd(10)} ${service}`, status === 'open' ? 'success' : 'info');
+        if (status === 'open') {
+            openPorts.push(port);
+        }
         await Utils.sleep(200);
     }
     
-    logToConsole(`\nScan complete. ${ports.filter(() => Math.random() > 0.5).length} open ports found.`, 'success');
+    logToConsole(`\nScan complete. ${openPorts.length} open ports found.`, 'success');
     
     if (Math.random() > 0.7) {
         const vuln = `CVE-2023-${Math.floor(Math.random() * 9999)}`;
@@ -624,11 +631,30 @@ function initializeEmailModule() {
         item.addEventListener('click', () => {
             const email = emails[index];
             emailContent.style.display = 'block';
-            emailContent.innerHTML = `
-                <strong>From:</strong> ${email.from}<br>
-                <strong>Subject:</strong> ${email.subject}<br><br>
-                ${email.body.replace(/\n/g, '<br>')}
-            `;
+            
+            // Safely set content using textContent to prevent XSS
+            emailContent.innerHTML = '';
+            const fromLine = document.createElement('strong');
+            fromLine.textContent = 'From: ';
+            emailContent.appendChild(fromLine);
+            emailContent.appendChild(document.createTextNode(email.from));
+            emailContent.appendChild(document.createElement('br'));
+            
+            const subjectLine = document.createElement('strong');
+            subjectLine.textContent = 'Subject: ';
+            emailContent.appendChild(subjectLine);
+            emailContent.appendChild(document.createTextNode(email.subject));
+            emailContent.appendChild(document.createElement('br'));
+            emailContent.appendChild(document.createElement('br'));
+            
+            // Convert newlines to <br> safely
+            const bodyLines = email.body.split('\n');
+            bodyLines.forEach((line, i) => {
+                emailContent.appendChild(document.createTextNode(line));
+                if (i < bodyLines.length - 1) {
+                    emailContent.appendChild(document.createElement('br'));
+                }
+            });
         });
     });
 }
@@ -684,6 +710,7 @@ function initializeTools() {
     
     // Packet Sniffer
     let snifferInterval = null;
+    const MAX_PACKET_LINES = 20;
     
     document.getElementById('start-sniffer').addEventListener('click', () => {
         const outputEl = document.getElementById('packet-output');
@@ -706,10 +733,10 @@ function initializeTools() {
             outputEl.innerHTML += packet;
             outputEl.scrollTop = outputEl.scrollHeight;
             
-            // Keep only last 20 lines
+            // Keep only last MAX_PACKET_LINES
             const lines = outputEl.innerHTML.split('\n');
-            if (lines.length > 20) {
-                outputEl.innerHTML = lines.slice(-20).join('\n');
+            if (lines.length > MAX_PACKET_LINES) {
+                outputEl.innerHTML = lines.slice(-MAX_PACKET_LINES).join('\n');
             }
         }, 1000);
     });
