@@ -21,9 +21,6 @@ const state = {
 let consoleElement, currentCommandElement, statusText, threatText, timerDisplay;
 let packetsSentElement, portsScannedElement, accessAttemptsElement, successRateElement;
 
-// Three.js variables
-let scene, camera, renderer, globe, particles;
-
 // ==========================================
 // UTILITY FUNCTIONS
 // ==========================================
@@ -76,58 +73,84 @@ function init3DScene() {
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // Scene setup
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setClearColor(0x0a0a0a);
-    container.appendChild(renderer.domElement);
-
-    // Create globe
-    const geometry = new THREE.SphereGeometry(1.5, 32, 32);
-    const material = new THREE.MeshBasicMaterial({
-        color: 0x00FF00,
-        wireframe: true
-    });
-    globe = new THREE.Mesh(geometry, material);
-    scene.add(globe);
-
-    // Create particles (data packets)
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCnt = 1000;
-    const posArray = new Float32Array(particlesCnt * 3);
-
-    for (let i = 0; i < particlesCnt * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 10;
+    // Create canvas for custom animations
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Animation state
+    let rotation = 0;
+    let particles = [];
+    
+    // Create particles
+    for (let i = 0; i < 100; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            size: Math.random() * 2 + 1
+        });
     }
-
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const particlesMaterial = new THREE.PointsMaterial({
-        size: 0.02,
-        color: 0x0099ff
-    });
-
-    particles = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particles);
-
-    camera.position.z = 5;
-
+    
     // Animation loop
     function animate() {
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw spinning globe wireframe
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.rotate(rotation);
+        
+        // Draw globe circles
+        ctx.strokeStyle = '#00FF00';
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < 8; i++) {
+            ctx.beginPath();
+            const radius = 80 - i * 10;
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        // Draw meridians
+        for (let i = 0; i < 12; i++) {
+            ctx.beginPath();
+            ctx.rotate(Math.PI / 6);
+            ctx.moveTo(0, -80);
+            ctx.lineTo(0, 80);
+            ctx.stroke();
+        }
+        
+        ctx.restore();
+        
+        // Update and draw particles (data packets)
+        ctx.fillStyle = '#0099ff';
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            // Wrap around edges
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        rotation += 0.01;
         requestAnimationFrame(animate);
-        
-        if (globe) {
-            globe.rotation.y += 0.005;
-            globe.rotation.x += 0.002;
-        }
-        
-        if (particles) {
-            particles.rotation.y += 0.001;
-        }
-
-        renderer.render(scene, camera);
     }
+    
     animate();
 }
 
