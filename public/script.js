@@ -86,6 +86,7 @@ function init3DScene() {
     // Animation state
     let rotation = 0;
     let particles = [];
+    let animationId = null;
     
     // Create particles
     for (let i = 0; i < 100; i++) {
@@ -100,6 +101,12 @@ function init3DScene() {
     
     // Animation loop
     function animate() {
+        // Check if page is visible to avoid unnecessary rendering
+        if (document.hidden) {
+            animationId = requestAnimationFrame(animate);
+            return;
+        }
+        
         ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
         ctx.fillRect(0, 0, width, height);
         
@@ -148,10 +155,17 @@ function init3DScene() {
         });
         
         rotation += 0.01;
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
     }
     
     animate();
+    
+    // Cleanup function (optional, can be used if needed)
+    return () => {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+    };
 }
 
 function updateStats() {
@@ -218,10 +232,12 @@ async function portScanAnimation() {
     await sleep(500);
     
     const ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 3306, 3389, 8080];
+    let openPorts = 0;
     
     for (let port of ports) {
         const status = Math.random() > 0.6 ? 'OPEN' : 'CLOSED';
         const className = status === 'OPEN' ? 'success' : 'error';
+        if (status === 'OPEN') openPorts++;
         logToConsole(`Port ${port}: ${status}`, className);
         state.stats.portsScanned++;
         updateStats();
@@ -229,7 +245,7 @@ async function portScanAnimation() {
     }
     
     await sleep(500);
-    logToConsole('Port scan complete. Found ' + ports.filter(() => Math.random() > 0.6).length + ' open ports.', 'success');
+    logToConsole('Port scan complete. Found ' + openPorts + ' open ports.', 'success');
 }
 
 async function bruteForceAnimation() {
