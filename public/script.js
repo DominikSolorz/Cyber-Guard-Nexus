@@ -3,6 +3,19 @@
 // Educational/Entertainment Purpose Only
 // ============================================
 
+// Audio configuration constants
+const AUDIO_CONFIG = {
+    TYPE_SOUND: { frequency: 800, gain: 0.02, duration: 0.05 },
+    ALERT_SOUND: { frequency: 440, gain: 0.1, duration: 0.2 },
+    CONNECT_SOUND: { frequency: 600, gain: 0.05, duration: 0.15 }
+};
+
+// Color constants for visualization
+const VISUAL_COLORS = {
+    NODE_GLOW_ALPHA: 0x88,
+    NODE_GLOW_FADE: 0x00
+};
+
 class HackingSimulator {
     constructor() {
         this.terminalOutput = document.getElementById('terminal-output');
@@ -24,8 +37,9 @@ class HackingSimulator {
         // Network visualization
         this.networkViz = null;
         
-        // Audio flags
+        // Audio flags and shared context
         this.audioEnabled = true;
+        this.audioContext = null;
         
         this.init();
     }
@@ -35,6 +49,16 @@ class HackingSimulator {
         this.initNetworkVisualization();
         this.displayWelcomeMessage();
         this.startBackgroundEffects();
+        this.initAudioContext();
+    }
+    
+    initAudioContext() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.warn('Audio not supported in this browser');
+            this.audioEnabled = false;
+        }
     }
     
     setupEventListeners() {
@@ -548,36 +572,24 @@ Active Scenario:   ${this.currentScenario.toUpperCase()}
     }
     
     playSound(type) {
-        // Simplified sound implementation
-        // In a full implementation, you'd have actual audio files
-        if (!this.audioEnabled) return;
+        if (!this.audioEnabled || !this.audioContext) return;
         
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            const config = AUDIO_CONFIG[type.toUpperCase() + '_SOUND'];
+            if (!config) return;
+            
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
             
             oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            gainNode.connect(this.audioContext.destination);
             
-            if (type === 'type') {
-                oscillator.frequency.value = 800;
-                gainNode.gain.value = 0.02;
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.05);
-            } else if (type === 'alert') {
-                oscillator.frequency.value = 440;
-                gainNode.gain.value = 0.1;
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.2);
-            } else if (type === 'connect') {
-                oscillator.frequency.value = 600;
-                gainNode.gain.value = 0.05;
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.15);
-            }
+            oscillator.frequency.value = config.frequency;
+            gainNode.gain.value = config.gain;
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + config.duration);
         } catch (e) {
-            // Audio not supported
+            // Audio playback failed silently
         }
     }
     
@@ -750,8 +762,11 @@ class NetworkVisualization {
                 node.x, node.y, 0,
                 node.x, node.y, node.radius * 2
             );
-            gradient.addColorStop(0, node.color + '88');
-            gradient.addColorStop(1, node.color + '00');
+            // Add semi-transparent color stop for glow effect
+            const glowColor = node.color + '88'; // 88 = 0.53 alpha
+            const fadeColor = node.color + '00'; // 00 = 0.0 alpha
+            gradient.addColorStop(0, glowColor);
+            gradient.addColorStop(1, fadeColor);
             
             this.ctx.fillStyle = gradient;
             this.ctx.beginPath();
