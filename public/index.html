@@ -1,29 +1,18 @@
-<!doctype html>
-<html lang="pl">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Margonem-like (PL) — prototyp</title>
-  <link rel="stylesheet" href="./styles.css">
-  <!-- Phaser from CDN -->
-  <script src="https://unpkg.com/phaser@3.60.0/dist/phaser.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Hacking Simulator</title>
 </head>
 <body>
-  <div id="game"></div>
-
-  <!-- on-screen controls -->
-  <div id="controls">
-    <button id="attackBtn" class="big-btn">ATAK</button>
-    <button id="skillBtn" class="big-btn">UMIEJ.</button>
-    <button id="pickupBtn" class="small-btn">WEŹ</button>
-    <button id="invBtn" class="small-btn">EQ</button>
-    <button id="shopBtn" class="small-btn">SKLP</button>
-  </div>
-
-  <!-- simple overlays for inventory/shop -->
-  <div id="overlay" class="hidden"></div>
-  <div id="panel" class="hidden"></div>
-
-  <script src="./js/game.js"></script>
+    <div id="simulator">
+        <h1>Welcome to the Hacking Simulator</h1>
+        <textarea id="console" readonly>Initializing...</textarea>
+        <input id="input" type="text" placeholder="Enter your command">
+        <button id="submit">Execute</button>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
