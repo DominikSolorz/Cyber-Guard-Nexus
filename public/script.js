@@ -36,6 +36,8 @@ const servers = [
 // ============================================================================
 // 3D BACKGROUND VISUALIZATION (Three.js)
 // ============================================================================
+let animationFrameId = null;
+
 function initThreeJS() {
     // Check if THREE is available
     if (typeof THREE === 'undefined') {
@@ -85,7 +87,12 @@ function initThreeJS() {
     
     // Animation loop
     function animate() {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
+        
+        // Only animate if page is visible
+        if (document.hidden) {
+            return;
+        }
         
         // Rotate nodes
         nodes.forEach((node, index) => {
@@ -106,10 +113,20 @@ function initThreeJS() {
     animate();
     
     // Handle window resize
-    window.addEventListener('resize', () => {
+    const handleResize = () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        window.removeEventListener('resize', handleResize);
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
     });
 }
 
@@ -155,24 +172,6 @@ function updateSecurity(level) {
 function updateConnections(count) {
     gameState.connections = count;
     connectionsElement.textContent = count;
-}
-
-function typeWriter(message, callback) {
-    let i = 0;
-    const speed = 30;
-    
-    function type() {
-        if (i < message.length) {
-            consoleElement.value += message.charAt(i);
-            consoleElement.scrollTop = consoleElement.scrollHeight;
-            i++;
-            setTimeout(type, speed);
-        } else if (callback) {
-            callback();
-        }
-    }
-    
-    type();
 }
 
 // ============================================================================
