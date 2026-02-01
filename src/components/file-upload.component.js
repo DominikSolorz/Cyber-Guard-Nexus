@@ -153,7 +153,7 @@ export class FileUploadComponent {
     return this.auth.canDeleteFiles();
   }
 
-  async onFileSelected(event: Event) {
+  async onFileSelected(event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
@@ -196,7 +196,7 @@ export class FileUploadComponent {
     }
   }
 
-  formatDate(date: Date): string {
+  formatDate(date): string {
     return new Date(date).toLocaleDateString('pl-PL', {
       day: '2-digit',
       month: '2-digit',

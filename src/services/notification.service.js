@@ -48,13 +48,13 @@ export class NotificationService {
 
   add(
     userId: string,
-    type: NotificationType,
+    type,
     title: string,
     message: string,
     link?: string,
     metadata?: any
   ): string {
-    const notification: Notification = {
+    const notification = {
       id: crypto.randomUUID(),
       userId,
       type,
@@ -97,7 +97,7 @@ export class NotificationService {
 
   // Metody pomocnicze do tworzenia powiadomień
 
-  notifyDeadlineApproaching(userId: string, caseTitle: string, deadline: Date, caseId: string) {
+  notifyDeadlineApproaching(userId: string, caseTitle: string, deadline, caseId: string) {
     const daysLeft = Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     this.add(
       userId,

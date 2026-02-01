@@ -2,7 +2,7 @@
 
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { AppComponent } from '/Cyber-Guard-Nexus/src/app.component.ts';
+import { AppComponent } from '/Cyber-Guard-Nexus/src/app.component.js';
 
 bootstrapApplication(AppComponent, {
   providers: [provideZonelessChangeDetection()]

@@ -208,8 +208,8 @@ import { Task, SubTask, TaskStatus, CasePriority } from '../models/types';
 })
 export class TaskManagerComponent {
   @Input() tasks = signal<Task[]>([]);
-  @Output() onTaskAdd = new EventEmitter<{ title: string; description?: string; dueDate?: Date; priority: CasePriority }>();
-  @Output() onTaskStatusChange = new EventEmitter<{ taskId: string; status: TaskStatus }>();
+  @Output() onTaskAdd = new EventEmitter<{ title: string; description?: string; dueDate?: Date; priority }>();
+  @Output() onTaskStatusChange = new EventEmitter<{ taskId: string; status }>();
   @Output() onTaskDelete = new EventEmitter<string>();
   @Output() onSubtaskToggle = new EventEmitter<{ taskId: string; subtaskId: string }>();
 
@@ -256,8 +256,8 @@ export class TaskManagerComponent {
     this.onSubtaskToggle.emit({ taskId, subtaskId });
   }
 
-  getStatusLabel(status: TaskStatus): string {
-    const labels: Record<TaskStatus, string> = {
+  getStatusLabel(status): string {
+    const labels = {
       'todo': 'Do zrobienia',
       'in-progress': 'W toku',
       'review': 'Przegląd',
@@ -267,11 +267,11 @@ export class TaskManagerComponent {
     return labels[status] || status;
   }
 
-  isOverdue(date: Date): boolean {
+  isOverdue(date): boolean {
     return new Date(date) < new Date();
   }
 
-  isDueSoon(date: Date): boolean {
+  isDueSoon(date): boolean {
     const dueDate = new Date(date);
     const now = new Date();
     const threeDays = 3 * 24 * 60 * 60 * 1000;

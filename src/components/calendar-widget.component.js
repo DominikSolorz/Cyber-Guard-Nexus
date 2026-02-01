@@ -238,7 +238,7 @@ export class CalendarWidgetComponent {
     const firstDay = new Date(year, monthIndex, 1);
     const lastDay = new Date(year, monthIndex + 1, 0);
     
-    const days: Date[] = [];
+    const days = [];
     
     // Dodaj dni z poprzedniego miesiąca
     const firstDayOfWeek = firstDay.getDay() || 7; // 1 = Poniedziałek
@@ -283,7 +283,7 @@ export class CalendarWidgetComponent {
     this.currentMonth.set(new Date(current.getFullYear(), current.getMonth() + 1, 1));
   }
 
-  selectDate(date: Date) {
+  selectDate(date) {
     if(this.selectedDate() && this.isSameDay(this.selectedDate()!, date)) {
       this.selectedDate.set(null);
     } else {
@@ -291,7 +291,7 @@ export class CalendarWidgetComponent {
     }
   }
 
-  getDayClasses(day: Date): string {
+  getDayClasses(day): string {
     const classes: string[] = ['relative text-sm'];
     const current = this.currentMonth();
     
@@ -312,22 +312,22 @@ export class CalendarWidgetComponent {
     return classes.join(' ');
   }
 
-  hasEventsOnDay(day: Date): boolean {
+  hasEventsOnDay(day): boolean {
     return this.events().some(e => this.isSameDay(e.startDate, day));
   }
 
-  isToday(date: Date): boolean {
+  isToday(date): boolean {
     return this.isSameDay(date, new Date());
   }
 
-  isSameDay(date1: Date, date2: Date): boolean {
+  isSameDay(date1, date2): boolean {
     return date1.getDate() === date2.getDate() &&
            date1.getMonth() === date2.getMonth() &&
            date1.getFullYear() === date2.getFullYear();
   }
 
-  getEventTypeColor(type: EventType): string {
-    const colors: Record<EventType, string> = {
+  getEventTypeColor(type): string {
+    const colors = {
       'hearing': '#ef4444',
       'meeting': '#3b82f6',
       'deadline': '#f59e0b',
@@ -337,8 +337,8 @@ export class CalendarWidgetComponent {
     return colors[type] || colors.other;
   }
 
-  getEventTypeLabel(type: EventType): string {
-    const labels: Record<EventType, string> = {
+  getEventTypeLabel(type): string {
+    const labels = {
       'hearing': 'Rozprawa',
       'meeting': 'Spotkanie',
       'deadline': 'Termin',

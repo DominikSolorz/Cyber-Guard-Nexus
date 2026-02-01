@@ -44,7 +44,7 @@ export class CalendarService {
     );
   }
 
-  getEventsByDateRange(startDate: Date, endDate: Date) {
+  getEventsByDateRange(startDate, endDate) {
     return computed(() =>
       this.eventsSignal().filter(e => 
         e.startDate >= startDate && e.startDate <= endDate
@@ -76,8 +76,8 @@ export class CalendarService {
     );
   }
 
-  addEvent(event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): string {
-    const newEvent: CalendarEvent = {
+  addEvent(event): string {
+    const newEvent = {
       ...event,
       id: crypto.randomUUID(),
       createdAt: new Date(),
@@ -89,7 +89,7 @@ export class CalendarService {
     return newEvent.id;
   }
 
-  updateEvent(id: string, updates: Partial<CalendarEvent>) {
+  updateEvent(id: string, updates) {
     this.eventsSignal.update(list =>
       list.map(e => e.id === id ? {...e, ...updates, updatedAt: new Date()} : e)
     );
@@ -107,11 +107,11 @@ export class CalendarService {
 
   // Metody pomocnicze
 
-  getEventsByType(type: EventType) {
+  getEventsByType(type) {
     return computed(() => this.eventsSignal().filter(e => e.type === type));
   }
 
-  hasConflict(startDate: Date, endDate: Date, attendees: string[], excludeEventId?: string): boolean {
+  hasConflict(startDate, endDate, attendees: string[], excludeEventId?: string): boolean {
     return this.eventsSignal().some(e => {
       if(excludeEventId && e.id === excludeEventId) return false;
       
@@ -124,7 +124,7 @@ export class CalendarService {
     });
   }
 
-  getConflictingEvents(startDate: Date, endDate: Date, attendees: string[]): CalendarEvent[] {
+  getConflictingEvents(startDate, endDate, attendees: string[]) {
     return this.eventsSignal().filter(e => {
       const hasCommonAttendees = e.attendees.some(a => attendees.includes(a));
       if(!hasCommonAttendees) return false;

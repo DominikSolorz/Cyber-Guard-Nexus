@@ -93,8 +93,8 @@ export class InvoiceService {
   createInvoice(data: {
     clientId: string;
     caseId?: string;
-    items: InvoiceItem[];
-    dueDate: Date;
+    items;
+    dueDate;
     taxRate?: number;
     notes?: string;
     createdBy: string;
@@ -108,7 +108,7 @@ export class InvoiceService {
     const tax = data.items.reduce((sum, item) => sum + (item.total * item.taxRate / 100), 0);
     const total = subtotal + tax;
 
-    const invoice: Invoice = {
+    const invoice = {
       id: crypto.randomUUID(),
       invoiceNumber,
       clientId: data.clientId,
@@ -130,11 +130,11 @@ export class InvoiceService {
     return invoice.id;
   }
 
-  updateInvoiceStatus(id: string, status: PaymentStatus, paymentMethod?: string) {
+  updateInvoiceStatus(id: string, status, paymentMethod?: string) {
     this.invoicesSignal.update(list =>
       list.map(inv => {
         if(inv.id === id) {
-          const updates: Partial<Invoice> = { status };
+          const updates = { status };
           if(status === 'paid') {
             updates.paidAt = new Date();
             updates.paymentMethod = paymentMethod;
@@ -173,7 +173,7 @@ export class InvoiceService {
   }
 
   startTimeEntry(caseId: string, userId: string, description: string, hourlyRate: number): string {
-    const entry: TimeEntry = {
+    const entry = {
       id: crypto.randomUUID(),
       caseId,
       userId,
@@ -205,7 +205,7 @@ export class InvoiceService {
     this.saveTimeEntries();
   }
 
-  updateTimeEntry(id: string, updates: Partial<TimeEntry>) {
+  updateTimeEntry(id: string, updates) {
     this.timeEntriesSignal.update(list =>
       list.map(entry => entry.id === id ? {...entry, ...updates} : entry)
     );
@@ -234,7 +234,7 @@ export class InvoiceService {
       .reduce((sum, inv) => sum + inv.total, 0);
   }
 
-  getRevenueByPeriod(startDate: Date, endDate: Date): number {
+  getRevenueByPeriod(startDate, endDate): number {
     return this.invoicesSignal()
       .filter(inv => 
         inv.status === 'paid' && 

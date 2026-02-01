@@ -1,12 +1,12 @@
 
 import { Injectable, signal } from '@angular/core';
 
-export interface User { id: string; username: string; role: 'admin'|'user'; password?: string; }
+export 
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   currentUser = signal<User|null>(null);
-  private users: User[] = [];
+  private users = [];
 
   constructor() {
      const u = localStorage.getItem('ekancelaria_users');
@@ -32,7 +32,7 @@ export class AuthService {
 
   register(u: string, p: string): boolean {
      if(this.users.some(x => x.username === u)) return false;
-     const nu: User = { id: crypto.randomUUID(), username: u, password: p, role: 'user' };
+     const nu = { id: crypto.randomUUID(), username: u, password: p, role: 'user' };
      this.users.push(nu);
      localStorage.setItem('ekancelaria_users', JSON.stringify(this.users));
      return this.login(u, p);

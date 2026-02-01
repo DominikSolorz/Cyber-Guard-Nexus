@@ -1,23 +1,11 @@
 
 import { Injectable, signal } from '@angular/core';
 
-export interface FileUpload {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  uploadedAt: Date;
-  uploadedBy: string;
-  caseId?: string;
-  description?: string;
-  category: 'document' | 'evidence' | 'correspondence' | 'other';
-  data: string; // Base64 data URL
-  thumbnail?: string; // For images
-}
+export 
 
 @Injectable({ providedIn: 'root' })
 export class FileService {
-  private files: FileUpload[] = [];
+  private files = [];
   private readonly FILES_KEY = 'ekancelaria_files_v2';
   private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   
@@ -62,14 +50,14 @@ export class FileService {
   }
 
   async uploadFile(
-    file: File, 
+    file, 
     userId: string,
     options?: {
       caseId?: string;
       description?: string;
       category?: FileUpload['category'];
     }
-  ): Promise<{ success: boolean; message?: string; fileId?: string }> {
+  ) {
     
     // Walidacja rozmiaru
     if(file.size > this.MAX_FILE_SIZE) {
@@ -97,7 +85,7 @@ export class FileService {
 
       this.uploadProgress.set(75);
 
-      const fileUpload: FileUpload = {
+      const fileUpload = {
         id: crypto.randomUUID(),
         name: file.name,
         type: file.type,
@@ -127,7 +115,7 @@ export class FileService {
     }
   }
 
-  private fileToBase64(file: File): Promise<string> {
+  private fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
@@ -136,7 +124,7 @@ export class FileService {
     });
   }
 
-  private generateThumbnail(dataUrl: string, maxSize: number): Promise<string> {
+  private generateThumbnail(dataUrl: string, maxSize: number) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
@@ -172,15 +160,15 @@ export class FileService {
     return this.files.find(f => f.id === id);
   }
 
-  getFilesByCaseId(caseId: string): FileUpload[] {
+  getFilesByCaseId(caseId: string) {
     return this.files.filter(f => f.caseId === caseId);
   }
 
-  getFilesByUser(userId: string): FileUpload[] {
+  getFilesByUser(userId: string) {
     return this.files.filter(f => f.uploadedBy === userId);
   }
 
-  getAllFiles(): FileUpload[] {
+  getAllFiles() {
     return [...this.files];
   }
 
@@ -245,7 +233,7 @@ export class FileService {
     return this.files.reduce((sum, f) => sum + f.size, 0);
   }
 
-  getFileCountByCategory(): Record<string, number> {
+  getFileCountByCategory() {
     return this.files.reduce((acc, f) => {
       acc[f.category] = (acc[f.category] || 0) + 1;
       return acc;

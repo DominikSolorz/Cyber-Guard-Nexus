@@ -104,7 +104,7 @@ export class MessagingService {
     }
 
     // Utwórz nową konwersację
-    const newConversation: Conversation = {
+    const newConversation = {
       id: crypto.randomUUID(),
       participants,
       caseId,
@@ -127,7 +127,7 @@ export class MessagingService {
     caseId?: string,
     attachments?: string[]
   ): string {
-    const message: Message = {
+    const message = {
       id: crypto.randomUUID(),
       conversationId,
       senderId,
@@ -232,7 +232,7 @@ export class MessagingService {
     this.saveConversations();
   }
 
-  searchMessages(query: string, userId: string): Message[] {
+  searchMessages(query: string, userId: string) {
     const lowerQuery = query.toLowerCase();
     return this.messagesSignal().filter(m => 
       (m.senderId === userId || m.recipientId === userId) &&

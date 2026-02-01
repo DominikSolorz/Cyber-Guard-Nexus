@@ -303,7 +303,7 @@ export class ClientDashboardComponent {
     this.fileService.downloadFile(fileId);
   }
 
-  formatDate(date: Date): string {
+  formatDate(date): string {
     return new Date(date).toLocaleDateString('pl-PL', {
       day: '2-digit',
       month: '2-digit',
@@ -312,7 +312,7 @@ export class ClientDashboardComponent {
   }
 
   getStatusClass(status: string): string {
-    const classes: Record<string, string> = {
+    const classes = {
       'new': 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
       'in-progress': 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
       'closed': 'bg-gray-500/20 text-gray-300 border border-gray-500/30',
@@ -323,7 +323,7 @@ export class ClientDashboardComponent {
   }
 
   getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
+    const labels = {
       'new': 'Nowa',
       'in-progress': 'W toku',
       'closed': 'Zamknięta',

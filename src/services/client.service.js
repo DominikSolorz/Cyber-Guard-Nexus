@@ -58,7 +58,7 @@ export class ClientService {
     assignedLawyers?: string[];
     tags?: string[];
   }): string {
-    const client: Client = {
+    const client = {
       id: crypto.randomUUID(),
       userId: data.userId,
       type: data.type,
@@ -77,7 +77,7 @@ export class ClientService {
     return client.id;
   }
 
-  updateClient(id: string, updates: Partial<Client>) {
+  updateClient(id: string, updates) {
     this.clientsSignal.update(list =>
       list.map(c => c.id === id ? {...c, ...updates, updatedAt: new Date()} : c)
     );
@@ -148,7 +148,7 @@ export class ClientService {
     this.save();
   }
 
-  searchClients(query: string): Client[] {
+  searchClients(query: string) {
     const lowerQuery = query.toLowerCase();
     return this.clientsSignal().filter(c =>
       c.companyName?.toLowerCase().includes(lowerQuery) ||

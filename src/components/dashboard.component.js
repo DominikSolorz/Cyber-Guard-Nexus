@@ -32,7 +32,7 @@ import { SettingsComponent } from './settings.component';
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 h-[calc(100vh-80px)]">
         
-        <!-- Left: Case List -->
+        <!-- Left List -->
         <div class="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
            <div class="flex items-center justify-between px-2">
               <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Biblioteka Spraw</h2>
@@ -66,7 +66,7 @@ import { SettingsComponent } from './settings.component';
            </div>
         </div>
 
-        <!-- Middle: Workspace -->
+        <!-- Middle -->
         <div class="lg:col-span-6 flex flex-col h-full bg-slate-900/50 rounded-xl border border-slate-800 overflow-hidden relative"
              (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
            
@@ -178,7 +178,7 @@ import { SettingsComponent } from './settings.component';
            }
         </div>
 
-        <!-- Right: AI -->
+        <!-- Right -->
         <div class="lg:col-span-3 h-full">
            <app-ai-assistant [activeCaseContext]="activeCase()"></app-ai-assistant>
         </div>
@@ -245,7 +245,7 @@ export class DashboardComponent {
   });
 
   setFilter(f: string) { this.activeFilter.set(f); }
-  selectCase(c: LegalCase) { this.selectedCaseId.set(c.id); }
+  selectCase(c) { this.selectedCaseId.set(c.id); }
   openNewCaseModal() { this.newCaseTitle=''; this.newCaseDesc=''; this.showNewCaseModal.set(true); }
   
   confirmAddCase() {
@@ -255,7 +255,7 @@ export class DashboardComponent {
      }
   }
 
-  cycleStatus(c: LegalCase) {
+  cycleStatus(c) {
      const statuses: ('Nowa'|'W toku'|'Zakończona')[] = ['Nowa', 'W toku', 'Zakończona'];
      const idx = statuses.indexOf(c.status);
      const next = statuses[(idx + 1) % statuses.length];
@@ -273,24 +273,24 @@ export class DashboardComponent {
   deleteFile(cid: string, fid: string) { this.caseService.deleteFile(cid, fid); }
   toggleFolder(cid: string, fid: string) { this.caseService.toggleFolder(cid, fid); }
   
-  getFiles(c: LegalCase, fid: string | null) { return c.files.filter(f => f.folderId === (fid || null)); }
+  getFiles(c, fid: string | null) { return c.files.filter(f => f.folderId === (fid || null)); }
 
   // Drag & Drop
-  onDragOver(e: DragEvent) { e.preventDefault(); this.isDragging.set(true); }
-  onDragLeave(e: DragEvent) { e.preventDefault(); this.isDragging.set(false); }
-  onDrop(e: DragEvent) {
+  onDragOver(e) { e.preventDefault(); this.isDragging.set(true); }
+  onDragLeave(e) { e.preventDefault(); this.isDragging.set(false); }
+  onDrop(e) {
      e.preventDefault();
      this.isDragging.set(false);
      if(this.activeCase() && e.dataTransfer?.files.length) {
         Array.from(e.dataTransfer.files).forEach(f => this.processFile(f, this.activeCase()!.id));
      }
   }
-  onFileSelected(e: Event, cid: string) {
+  onFileSelected(e, cid: string) {
      const input = e.target as HTMLInputElement;
      if(input.files?.length) this.processFile(input.files[0], cid);
   }
 
-  processFile(file: File, cid: string) {
+  processFile(file, cid: string) {
      const reader = new FileReader();
      reader.onload = (e) => {
         const url = e.target?.result as string;
@@ -324,7 +324,7 @@ export class DashboardComponent {
      finally { this.isAnalyzingFile.set(false); }
   }
 
-  previewFile(f: CaseFile) { this.fileToPreview.set(f); }
+  previewFile(f) { this.fileToPreview.set(f); }
   closePreview() { this.fileToPreview.set(null); }
   openSettings() { this.showSettings.set(true); }
   closeSettings() { this.showSettings.set(false); }

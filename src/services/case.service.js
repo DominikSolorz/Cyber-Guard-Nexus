@@ -2,9 +2,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { AuthService } from './auth.service';
 
-export interface CaseFolder { id: string; name: string; isExpanded: boolean; }
-export interface CaseFile { id: string; folderId?: string | null; name: string; type: 'pdf'|'image'|'word'|'other'; size: string; dateAdded: Date; contentUrl: string; }
-export interface LegalCase { id: string; ownerId: string; title: string; description: string; status: 'W toku'|'Zakończona'|'Nowa'; deadline?: Date; folders: CaseFolder[]; files: CaseFile[]; }
+export 
+export 
+export 
 
 @Injectable({ providedIn: 'root' })
 export class CaseService {
@@ -36,7 +36,7 @@ export class CaseService {
 
   addCase(title: string, desc: string, deadline?: Date) {
      const owner = this.authService.currentUser()?.id || '1';
-     const nc: LegalCase = { id: crypto.randomUUID(), ownerId: owner, title, description: desc, status: 'Nowa', deadline, folders: [], files: [] };
+     const nc = { id: crypto.randomUUID(), ownerId: owner, title, description: desc, status: 'Nowa', deadline, folders: [], files: [] };
      this.allCasesSignal.update(l => [nc, ...l]);
      this.save();
   }
@@ -47,7 +47,7 @@ export class CaseService {
   }
 
   addFolder(cid: string, name: string) {
-     const f: CaseFolder = { id: crypto.randomUUID(), name, isExpanded: true };
+     const f = { id: crypto.randomUUID(), name, isExpanded: true };
      this.allCasesSignal.update(l => l.map(c => c.id===cid ? {...c, folders: [...c.folders, f]} : c));
      this.save();
   }
@@ -62,9 +62,9 @@ export class CaseService {
       this.save();
   }
 
-  addFileToCase(cid: string, file: File, url: string, fid: string|null): string {
+  addFileToCase(cid: string, file, url: string, fid: string|null): string {
      const type = this.getType(file.name, file.type);
-     const newFile: CaseFile = { 
+     const newFile = { 
         id: crypto.randomUUID(), folderId: fid, name: file.name, type, 
         size: (file.size/1024).toFixed(1)+' KB', dateAdded: new Date(), contentUrl: url 
      };

@@ -4,11 +4,7 @@ import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CaseFile } from '../services/case.service';
 
-interface ViewState {
-  status: 'loading' | 'success' | 'error';
-  url?: SafeResourceUrl;
-  message?: string;
-}
+
 
 @Component({
   selector: 'app-doc-viewer',
@@ -95,7 +91,7 @@ export class DocViewerComponent implements OnDestroy {
   close = output<void>();
   private currentObjectUrl: string | null = null;
 
-  constructor(private sanitizer: DomSanitizer) {}
+  constructor(private sanitizer) {}
 
   viewState = computed<ViewState>(() => {
     const f = this.file();
@@ -140,7 +136,7 @@ export class DocViewerComponent implements OnDestroy {
     document.body.removeChild(a);
   }
 
-  private dataURItoBlob(dataURI: string): Blob {
+  private dataURItoBlob(dataURI: string) {
     if (!dataURI.startsWith('data:')) throw new Error('Błędny format danych.');
     const split = dataURI.split(',');
     const mimeString = split[0].split(':')[1].split(';')[0];
