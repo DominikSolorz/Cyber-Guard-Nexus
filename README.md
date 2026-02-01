@@ -1,20 +1,49 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# E-Kancelaria Pro v2.0.0
 
-# Run and deploy your AI Studio app
+![E-Kancelaria Pro](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Angular](https://img.shields.io/badge/Angular-21.1-red.svg)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES2015-yellow.svg)
+![PWA](https://img.shields.io/badge/PWA-Ready-success.svg)
 
-This contains everything you need to run your app locally.
+**Profesjonalny system zarządzania kancelarią prawną** - Pełna wersja produkcyjna z osobnymi interfejsami dla Klientów i Kancelarii.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1SapKUTASTC28-uwEUgFT5WovJzbtcYIV
+🌐 **Demo:** https://dominiksolorz.github.io/Cyber-Guard-Nexus/
 
-## Run Locally
+---
 
-**Prerequisites:**  Node.js
+## 🚀 Funkcje
 
+### ✅ Osobne interfejsy użytkownika
+- 🟢 **Dashboard Klienta** - prosty, zielony, tylko odczyt
+- 🔵 **Dashboard Kancelarii** - zaawansowany, niebieski, pełne zarządzanie
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### ✅ Zarządzanie sprawami
+- Pełna obsługa spraw prawnych z sygnaturami i timeline
+- Upload dokumentów (PDF, Word, Excel, JPG) do 10MB
+- Zadania, terminy i notatki do każdej sprawy
+
+### ✅ PWA - Progressive Web App
+- **Instalacja na Android/iOS** - Dodaj do ekranu głównego
+- **Tryb offline** - Praca bez internetu
+- **Szybkie ładowanie** - Działa jak natywna aplikacja
+
+---
+
+## 📱 Instalacja
+
+1. Otwórz: **https://dominiksolorz.github.io/Cyber-Guard-Nexus/**
+2. Menu → **Dodaj do ekranu głównego**
+3. Gotowe! 📱
+
+## 🔐 Logowanie
+
+```
+Login: admin
+Hasło: Admin2026!
+```
+
+---
+
+## 📄 Licencja
+
+© 2026 Dominik Solorz - All rights reserved
