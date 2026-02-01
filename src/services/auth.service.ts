@@ -26,94 +26,11 @@ export class AuthService {
          }));
        } catch(e) {
          console.error('Error loading users:', e);
-         this.createDefaultUsers();
+         this.users = [];
        }
      } else {
-       this.createDefaultUsers();
+       this.users = [];
      }
-  }
-
-  private createDefaultUsers() {
-     const now = new Date();
-     this.users = [
-       {
-         id: '1',
-         email: 'admin@kancelaria.pl',
-         username: 'admin',
-         password: 'admin123',
-         role: 'admin',
-         firstName: 'Administrator',
-         lastName: 'Systemu',
-         phone: '+48 123 456 789',
-         isActive: true,
-         createdAt: now,
-         settings: this.getDefaultSettings()
-       },
-       {
-         id: '2',
-         email: 'jan.kowalski@kancelaria.pl',
-         username: 'j.kowalski',
-         password: 'lawyer123',
-         role: 'lawyer',
-         firstName: 'Jan',
-         lastName: 'Kowalski',
-         phone: '+48 500 100 200',
-         licenseNumber: 'ADW/12345/2020',
-         specialization: ['Prawo cywilne', 'Prawo rodzinne', 'Prawo spadkowe'],
-         isActive: true,
-         createdAt: now,
-         settings: this.getDefaultSettings()
-       },
-       {
-         id: '3',
-         email: 'anna.nowak@kancelaria.pl',
-         username: 'a.nowak',
-         password: 'lawyer123',
-         role: 'lawyer',
-         firstName: 'Anna',
-         lastName: 'Nowak',
-         phone: '+48 600 200 300',
-         licenseNumber: 'ADW/67890/2018',
-         specialization: ['Prawo karne', 'Prawo gospodarcze'],
-         isActive: true,
-         createdAt: now,
-         settings: this.getDefaultSettings()
-       },
-       {
-         id: '4',
-         email: 'maria.wisniewska@example.com',
-         username: 'm.wisniewska',
-         password: 'client123',
-         role: 'client',
-         firstName: 'Maria',
-         lastName: 'Wiśniewska',
-         phone: '+48 700 300 400',
-         pesel: '85010112345',
-         address: {
-           street: 'ul. Kwiatowa 15/3',
-           city: 'Warszawa',
-           postalCode: '00-001',
-           country: 'Polska'
-         },
-         isActive: true,
-         createdAt: now,
-         settings: this.getDefaultSettings()
-       },
-       {
-         id: '5',
-         email: 'asystent@kancelaria.pl',
-         username: 'asystent',
-         password: 'assist123',
-         role: 'assistant',
-         firstName: 'Piotr',
-         lastName: 'Zieliński',
-         phone: '+48 800 400 500',
-         isActive: true,
-         createdAt: now,
-         settings: this.getDefaultSettings()
-       }
-     ];
-     this.saveUsers();
   }
 
   private getDefaultSettings(): UserSettings {
@@ -154,10 +71,10 @@ export class AuthService {
 
   login(username: string, password: string): boolean {
      const user = this.users.find(u => 
-       (u.username === username || u.email === username) && u.password === password && u.isActive
+       (u.username === username || u.email === username) && u.isActive
      );
      
-     if(user) {
+     if(user && this.verifyPassword(password, user.password)) {
        user.lastLogin = new Date();
        const userCopy = {...user};
        delete userCopy.password; // Nie przechowuj hasła w sesji
@@ -183,28 +100,89 @@ export class AuthService {
     lastName: string;
     phone?: string;
     role?: UserRole;
-  }): boolean {
-     if(this.users.some(u => u.username === data.username || u.email === data.email)) {
-       return false;
+    licenseNumber?: string; // Dla adwokatów
+    specialization?: string[]; // Dla adwokatów
+    pesel?: string; // Dla klientów
+    nip?: string; // Dla firm
+    companyName?: string; // Dla firm
+    address?: { street: string; city: string; postalCode: string; country: string; };
+  }): { success: boolean; message?: string; needsVerification?: boolean } {
+     // Walidacja
+     if(!data.email || !data.username || !data.password || !data.firstName || !data.lastName) {
+       return { success: false, message: 'Wszystkie pola są wymagane' };
+     }
+
+     if(data.password.length < 8) {
+       return { success: false, message: 'Hasło musi mieć minimum 8 znaków' };
+     }
+
+     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+       return { success: false, message: 'Nieprawidłowy format email' };
+     }
+
+     if(this.users.some(u => u.username === data.username)) {
+       return { success: false, message: 'Nazwa użytkownika już zajęta' };
+     }
+
+     if(this.users.some(u => u.email === data.email)) {
+       return { success: false, message: 'Email już zarejestrowany' };
      }
 
      const newUser: User = {
        id: crypto.randomUUID(),
        email: data.email,
        username: data.username,
-       password: data.password,
+       password: this.hashPassword(data.password),
        role: data.role || 'client',
        firstName: data.firstName,
        lastName: data.lastName,
        phone: data.phone,
-       isActive: true,
+       isActive: data.role === 'lawyer' || data.role === 'assistant' ? false : true, // Kancelaria wymaga weryfikacji
        createdAt: new Date(),
        settings: this.getDefaultSettings()
      };
 
+     // Dodatkowe dane dla adwokatów
+     if(data.role === 'lawyer') {
+       newUser.licenseNumber = data.licenseNumber;
+       newUser.specialization = data.specialization;
+     }
+
+     // Dodatkowe dane dla klientów
+     if(data.role === 'client') {
+       newUser.pesel = data.pesel;
+       newUser.nip = data.nip;
+       newUser.companyName = data.companyName;
+       newUser.address = data.address;
+     }
+
      this.users.push(newUser);
      this.saveUsers();
-     return this.login(data.username, data.password);
+     
+     if(newUser.role === 'lawyer' || newUser.role === 'assistant') {
+       return { 
+         success: true, 
+         message: 'Konto utworzone. Oczekiwanie na weryfikację administratora.',
+         needsVerification: true
+       };
+     }
+
+     // Auto-login dla klientów
+     const loginSuccess = this.login(data.username, data.password);
+     return { 
+       success: loginSuccess, 
+       message: loginSuccess ? 'Konto utworzone pomyślnie' : 'Błąd podczas logowania' 
+     };
+  }
+
+  private hashPassword(password: string): string {
+    // W produkcji użyj prawdziwego hashowania (bcrypt, scrypt)
+    // To jest tylko placeholder do localStorage
+    return btoa(password); // Base64 - NIE UŻYWAJ w produkcji!
+  }
+
+  private verifyPassword(input: string, hashed: string): boolean {
+    return this.hashPassword(input) === hashed;
   }
 
   updateProfile(updates: Partial<User>): boolean {
@@ -292,12 +270,12 @@ export class AuthService {
 
   hasPermission(permission: string): boolean {
      const user = this.currentUser();
-     if(!user) return false;
+     if(!user || !user.isActive) return false;
 
      // Admin ma wszystkie uprawnienia
      if(user.role === 'admin') return true;
 
-     // Definicje uprawnień dla ról
+     // Definicje uprawnień dla ról - KLIENT MA TYLKO READ!
      const permissions: Record<UserRole, string[]> = {
        'admin': ['*'],
        'lawyer': [
@@ -305,29 +283,91 @@ export class AuthService {
          'cases.create',
          'cases.edit',
          'cases.delete',
+         'files.view',
          'files.upload',
          'files.delete',
+         'files.edit',
          'clients.view',
          'clients.create',
+         'clients.edit',
+         'clients.delete',
+         'invoices.view',
          'invoices.create',
-         'reports.generate'
+         'invoices.edit',
+         'invoices.delete',
+         'calendar.view',
+         'calendar.create',
+         'calendar.edit',
+         'calendar.delete',
+         'messages.send',
+         'messages.view',
+         'reports.generate',
+         'reports.view',
+         'tasks.view',
+         'tasks.create',
+         'tasks.edit',
+         'tasks.delete'
        ],
        'assistant': [
          'cases.view',
          'cases.edit',
+         'files.view',
          'files.upload',
          'clients.view',
-         'calendar.manage'
+         'clients.edit',
+         'calendar.view',
+         'calendar.create',
+         'calendar.edit',
+         'messages.send',
+         'messages.view',
+         'tasks.view',
+         'tasks.create',
+         'tasks.edit'
        ],
        'client': [
+         // TYLKO ODCZYT!
          'cases.view_own',
          'files.view_own',
+         'files.download_own',
+         'messages.view_own',
          'messages.send',
-         'invoices.view_own'
+         'invoices.view_own',
+         'calendar.view_own',
+         'tasks.view_own'
        ]
      };
 
      return permissions[user.role]?.includes(permission) || false;
+  }
+
+  // Pomocnicze metody sprawdzania uprawnień
+  canUploadFiles(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'admin' || role === 'lawyer' || role === 'assistant';
+  }
+
+  canDeleteFiles(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'admin' || role === 'lawyer';
+  }
+
+  canEditCases(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'admin' || role === 'lawyer' || role === 'assistant';
+  }
+
+  canDeleteCases(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'admin' || role === 'lawyer';
+  }
+
+  canManageClients(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'admin' || role === 'lawyer';
+  }
+
+  isReadOnly(): boolean {
+    return this.currentUser()?.role === 'client';
   }
 
   isAdmin(): boolean {
