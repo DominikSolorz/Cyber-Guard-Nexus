@@ -1,0 +1,31 @@
+# Netlify Configuration
+[build]
+  # Brak buildu - aplikacja już gotowa
+  command = ""
+  publish = "."
+
+# Nagłówki dla PWA
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"
+    
+[[headers]]
+  for = "/src/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    
+[[headers]]
+  for = "/src/service-worker.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Service-Worker-Allowed = "/"
+
+# Przekierowanie dla SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
