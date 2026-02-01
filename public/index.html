@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cyber Guard Nexus - Modular Security & AI Platform">
+    <title>Cyber Guard Nexus - Security Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>🛡️ Cyber Guard Nexus</h1>
+                <p class="tagline">Modular Security & AI Platform</p>
+            </div>
+            <nav>
+                <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+                <button class="nav-btn" data-section="monitoring">Monitoring</button>
+                <button class="nav-btn" data-section="alerts">Alerts</button>
+                <button class="nav-btn" data-section="settings">Settings</button>
+            </nav>
+        </header>
+
+        <main>
+            <section id="dashboard" class="content-section active">
+                <h2>Security Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🔒</div>
+                        <div class="stat-info">
+                            <h3>Active Threats</h3>
+                            <p class="stat-value" id="threats-count">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <h3>Systems Monitored</h3>
+                            <p class="stat-value" id="systems-count">12</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-info">
+                            <h3>Active Connections</h3>
+                            <p class="stat-value" id="connections-count">48</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔍</div>
+                        <div class="stat-info">
+                            <h3>Scans Today</h3>
+                            <p class="stat-value" id="scans-count">156</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-list" id="activity-list">
+                        <!-- Activity items will be added dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="monitoring" class="content-section">
+                <h2>System Monitoring</h2>
+                <div class="monitoring-grid">
+                    <div class="monitor-card">
+                        <h3>Network Traffic</h3>
+                        <div class="status-indicator status-good">Normal</div>
+                        <p>Bandwidth: 45.2 MB/s</p>
+                    </div>
+                    <div class="monitor-card">
+                        <h3>System Performance</h3>
+                        <div class="status-indicator status-good">Optimal</div>
+                        <p>CPU: 32% | RAM: 48%</p>
+                    </div>
+                    <div class="monitor-card">
+                        <h3>Security Protocols</h3>
+                        <div class="status-indicator status-good">Active</div>
+                        <p>All protocols operational</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="alerts" class="content-section">
+                <h2>Security Alerts</h2>
+                <div class="alerts-container">
+                    <div class="alert-item alert-info">
+                        <span class="alert-icon">ℹ️</span>
+                        <div class="alert-content">
+                            <strong>System Update Available</strong>
+                            <p>Security patch v2.4.1 is ready for installation</p>
+                        </div>
+                        <span class="alert-time">2 hours ago</span>
+                    </div>
+                    <div class="alert-item alert-success">
+                        <span class="alert-icon">✅</span>
+                        <div class="alert-content">
+                            <strong>Scan Completed</strong>
+                            <p>Weekly security scan finished with no issues detected</p>
+                        </div>
+                        <span class="alert-time">5 hours ago</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="settings" class="content-section">
+                <h2>System Settings</h2>
+                <div class="settings-form">
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" checked>
+                            Enable Real-time Monitoring
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" checked>
+                            Automatic Threat Detection
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox">
+                            Send Email Notifications
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label for="scan-interval">Scan Interval (hours):</label>
+                        <input type="number" id="scan-interval" value="6" min="1" max="24">
+                    </div>
+                    <button class="btn-primary">Save Settings</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Cyber Guard Nexus. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
