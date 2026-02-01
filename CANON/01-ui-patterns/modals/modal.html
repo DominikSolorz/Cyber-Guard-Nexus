@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal - UI Pattern</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal Container */
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #95a5a6;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #7f8c8d;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .example-section {
+            margin-bottom: 2rem;
+        }
+
+        .example-section h3 {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>Modal Pattern</h1>
+        <p>Neutral, reusable modal dialog pattern. Works offline with no external dependencies.</p>
+
+        <div class="example-section">
+            <h3>Basic Modal</h3>
+            <button class="btn" onclick="openModal('basicModal')">Open Basic Modal</button>
+        </div>
+
+        <div class="example-section">
+            <h3>Confirmation Modal</h3>
+            <button class="btn" onclick="openModal('confirmModal')">Open Confirmation Modal</button>
+        </div>
+
+        <div class="example-section">
+            <h3>Form Modal</h3>
+            <button class="btn" onclick="openModal('formModal')">Open Form Modal</button>
+        </div>
+    </div>
+
+    <!-- Basic Modal -->
+    <div class="modal-overlay" id="basicModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Information</h2>
+                <button class="modal-close" onclick="closeModal('basicModal')" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>This is a basic modal dialog. It can contain any content you need.</p>
+                <p>The modal is dismissible by clicking the close button, clicking outside, or pressing ESC.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('basicModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Confirm Action</h2>
+                <button class="modal-close" onclick="closeModal('confirmModal')" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to proceed with this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn" onclick="handleConfirm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Modal -->
+    <div class="modal-overlay" id="formModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Form Example</h2>
+                <button class="modal-close" onclick="closeModal('formModal')" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="exampleForm" onsubmit="handleFormSubmit(event)">
+                    <div style="margin-bottom: 1rem;">
+                        <label for="nameInput" style="display: block; margin-bottom: 0.5rem;">Name:</label>
+                        <input type="text" id="nameInput" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label for="emailInput" style="display: block; margin-bottom: 0.5rem;">Email:</label>
+                        <input type="email" id="emailInput" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('formModal')">Cancel</button>
+                <button class="btn" onclick="document.getElementById('exampleForm').requestSubmit()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Offline-ready modal functions, no external dependencies
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    closeModal(overlay.id);
+                }
+            });
+        });
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    closeModal(modal.id);
+                });
+            }
+        });
+
+        // Example handlers
+        function handleConfirm() {
+            alert('Action confirmed!');
+            closeModal('confirmModal');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            alert('Form submitted!');
+            closeModal('formModal');
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>

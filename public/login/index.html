@@ -1,0 +1,54 @@
+<!-- FILE: public/login/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Cyber Guard Nexus</title>
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <a href="../" class="logo">Cyber Guard Nexus</a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="./" class="active">Login</a></li>
+                    <li><a href="../register/">Register</a></li>
+                    <li><a href="../privacy/">Privacy</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="auth-card">
+                <h2>System Access</h2>
+                <form action="#" method="POST">
+                    <div class="form-group">
+                        <label for="email">User Identification (Email)</label>
+                        <input type="email" id="email" name="email" class="form-input" required placeholder="agent@nexus.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Access Key (Password)</label>
+                        <input type="password" id="password" name="password" class="form-input" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%">Authenticate</button>
+                </form>
+                <div class="form-footer">
+                    <p>New credentials required? <a href="../register/">Initialize account</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2024 Cyber Guard Nexus. Secure Transmission.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/app.js"></script>
+</body>
+</html>

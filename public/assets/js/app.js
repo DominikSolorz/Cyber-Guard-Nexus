@@ -1,0 +1,59 @@
+// Frontendowa obsługa logowania i rejestracji
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Logowanie
+    const loginForm = document.getElementById('login-form');
+    if(loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            let msg = '';
+
+            if (
+                username === 'admin' &&
+                email.startsWith('admin@') &&
+                password === 'Admin16496@'
+            ) {
+                msg = 'Zalogowano jako administrator';
+            } else {
+                msg = 'Zalogowano jako użytkownik';
+            }
+            pokazKomunikat(msg);
+        });
+    }
+
+    // Rejestracja z walidacją frontendową
+    const registerForm = document.getElementById('register-form');
+    if(registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            let msg = '';
+
+            if (username && email && password) {
+                msg = 'Rejestracja zakończona powodzeniem (frontendowa walidacja).';
+            } else {
+                msg = 'Wszystkie pola muszą być wypełnione.';
+            }
+            pokazKomunikat(msg);
+        });
+    }
+});
+
+// Funkcja do wyświetlania komunikatów
+function pokazKomunikat(msg) {
+    let el = document.getElementById('login-result');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'login-result';
+        el.style.margin = '16px 0';
+        document.body.appendChild(el);
+    }
+    el.innerText = msg;
+    el.style.fontWeight = 'bold';
+    el.style.color = '#089200';
+}

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<!-- Advanced Leaflet + OpenStreetMap Demo -->
+<!-- Source: Legal-Buddy-AI (adapted, standalone, no backend) -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Leaflet Example</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <title>Advanced Leaflet OSM Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .control-panel h3 {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .control-group button {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .control-group button:hover {
+            background: #2980b9;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .zoom-display {
+            text-align: center;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .custom-popup {
+            font-family: Arial, sans-serif;
+        }
+
+        .custom-popup h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .custom-popup p {
+            margin-bottom: 0.25rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 1rem;
+        }
+
+        .feature-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-group h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #3498db;
+        }
+
+        .btn {
+            width: 100%;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .location-input {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .location-input input {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+        }
+
+        #map {
+            height: 100vh;
+        }
+
+        .info-box {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .info-box p {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="control-panel">
+        <h3>Map Controls</h3>
+        
+        <div class="control-group">
+            <label>Quick Actions</label>
+            <button onclick="addRandomMarker()">Add Random Marker</button>
+            <button onclick="clearMarkers()">Clear All Markers</button>
+            <button onclick="fitAllMarkers()">Fit View to Markers</button>
+        </div>
+
+        <div class="control-group">
+            <label>Zoom Level: <span class="zoom-display" id="zoomLevel">13</span></label>
+            <input type="range" min="1" max="18" value="13" id="zoomSlider">
+        </div>
+
+        <div class="control-group">
+            <button onclick="toggleLayerControl()">Toggle Layers</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <div class="container">
+        <div class="sidebar">
+            <h2>Map Controls</h2>
+
+            <div class="info-box">
+                <p><strong>Features:</strong></p>
+                <p>• Multiple layers</p>
+                <p>• Custom markers</p>
+                <p>• Drawing tools</p>
+                <p>• Area calculation</p>
+            </div>
+
+            <div class="feature-group">
+                <h3>Navigation</h3>
+                <div class="location-input">
+                    <input type="number" id="lat" placeholder="Latitude" step="0.00001" value="51.505">
+                    <input type="number" id="lng" placeholder="Longitude" step="0.00001" value="-0.09">
+                    <button class="btn" onclick="goToLocation()">Go to Location</button>
+                </div>
+            </div>
+
+            <div class="feature-group">
+                <h3>Markers</h3>
+                <button class="btn" onclick="addCustomMarker()">Add Marker at Center</button>
+                <button class="btn" onclick="addCircle()">Add Circle</button>
+                <button class="btn" onclick="addPolygon()">Add Random Polygon</button>
+            </div>
+
+            <div class="feature-group">
+                <h3>Layers</h3>
+                <button class="btn" onclick="toggleHeatmap()">Toggle Heatmap Simulation</button>
+            </div>
+
+            <div class="feature-group">
+                <h3>Actions</h3>
+                <button class="btn" onclick="measureDistance()">Measure Distance</button>
+                <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+            </div>
+
+            <div class="info-box">
+                <p id="stats">Shapes: 0</p>
+            </div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([51.505, -0.09], 13);
+
+        // Define different tile layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        });
+
+        const osmHotLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors, Tiles by Humanitarian OSM Team',
+            maxZoom: 19
+        });
+
+        const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+            maxZoom: 17
+        });
+
+        // Add default layer
+        osmLayer.addTo(map);
+
+        // Layer control
+        const baseMaps = {
+            "OpenStreetMap": osmLayer,
+            "OSM Humanitarian": osmHotLayer,
+            "Topographic": topoLayer
+        };
+
+        let layerControl = L.control.layers(baseMaps).addTo(map);
+        let showingLayers = true;
+
+        // Store markers for management
+        let markers = [];
+
+        // Add some initial points of interest
+        const poi = [
+            { lat: 51.505, lng: -0.09, name: "Location 1", desc: "Primary marker" },
+            { lat: 51.51, lng: -0.1, name: "Location 2", desc: "Secondary marker" },
+            { lat: 51.49, lng: -0.08, name: "Location 3", desc: "Tertiary marker" }
+        ];
+
+        poi.forEach(point => {
+            const marker = L.marker([point.lat, point.lng]).addTo(map);
+            const popupContent = `
+                <div class="custom-popup">
+                    <h4>${point.name}</h4>
+                    <p><strong>Description:</strong> ${point.desc}</p>
+                    <p><strong>Coordinates:</strong> ${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}</p>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            markers.push(marker);
+        });
+
+        // Custom icon
+        const customIcon = L.icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2h0PSI0MSIgdmlld0JveD0iMCAwIDI1IDQxIj48cGF0aCBmaWxsPSIjRkYwMDAwIiBkPSJNMTIuNSAwQzUuNiAwIDAgNS42IDAgMTIuNWMwIDEuOC40IDMuNSAxLjEgNS4xTDEyLjUgNDFsMTEuNC0yMy40Yy43LTEuNiAxLjEtMy4zIDEuMS01LjFDMjUgNS42IDE5LjQgMCAxMi41IDB6bTAgMTcuNmMtMi44IDAtNS4xLTIuMy01LjEtNS4xczIuMy01LjEgNS4xLTUuMSA1LjEgMi4zIDUuMSA1LjEtMi4zIDUuMS01LjEgNS4xeiIvPjwvc3ZnPg==',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34]
+        });
+
+        // Add random marker function
+        function addRandomMarker() {
+            const bounds = map.getBounds();
+            const lat = bounds.getSouth() + (Math.random() * (bounds.getNorth() - bounds.getSouth()));
+            const lng = bounds.getWest() + (Math.random() * (bounds.getEast() - bounds.getWest()));
+            
+            const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+            marker.bindPopup(`
+                <div class="custom-popup">
+                    <h4>Random Marker</h4>
+                    <p>Added at: ${new Date().toLocaleTimeString()}</p>
+                    <p>${lat.toFixed(5)}, ${lng.toFixed(5)}</p>
+                </div>
+            `);
+            markers.push(marker);
+        }
+
+        // Clear all markers
+        function clearMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+        }
+
+        // Fit view to all markers
+        function fitAllMarkers() {
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // Toggle layer control
+        function toggleLayerControl() {
+            if (showingLayers) {
+                map.removeControl(layerControl);
+                showingLayers = false;
+            } else {
+                layerControl = L.control.layers(baseMaps).addTo(map);
+                showingLayers = true;
+            }
+        }
+
+        // Zoom slider control
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomLevel = document.getElementById('zoomLevel');
+
+        zoomSlider.addEventListener('input', function() {
+            map.setZoom(parseInt(this.value));
+        });
+
+        map.on('zoomend', function() {
+            const zoom = map.getZoom();
+            zoomSlider.value = zoom;
+            zoomLevel.textContent = zoom;
+        });
+
+        // Add polyline route example
+        const route = L.polyline([
+            [51.505, -0.09],
+            [51.51, -0.1],
+            [51.51, -0.12],
+            [51.49, -0.08]
+        ], {
+            color: 'blue',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 10'
+        }).addTo(map);
+
+        route.bindPopup('Sample Route');
+
+        // Click event for coordinates
+        map.on('click', function(e) {
+            console.log('Clicked at:', e.latlng);
+        });
+
+        // Scale control
+        L.control.scale({ imperial: false, metric: true }).addTo(map);
+
+        console.log('Advanced map initialized with', markers.length, 'markers');
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Store all shapes and markers
+        const shapes = [];
+        let measureMode = false;
+        let measurePoints = [];
+
+        // Add scale
+        L.control.scale().addTo(map);
+
+        // Go to location
+        function goToLocation() {
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                map.setView([lat, lng], 13);
+                
+                const marker = L.marker([lat, lng])
+                    .addTo(map)
+                    .bindPopup(`Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+                    .openPopup();
+                shapes.push(marker);
+                updateStats();
+            }
+        }
+
+        // Add custom marker
+        function addCustomMarker() {
+            const center = map.getCenter();
+            
+            const marker = L.marker([center.lat, center.lng])
+                .addTo(map)
+                .bindPopup(`Marker at: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}`);
+            
+            shapes.push(marker);
+            updateStats();
+        }
+
+        // Add circle
+        function addCircle() {
+            const center = map.getCenter();
+            
+            const circle = L.circle([center.lat, center.lng], {
+                color: '#3498db',
+                fillColor: '#3498db',
+                fillOpacity: 0.3,
+                radius: 500
+            }).addTo(map);
+            
+            circle.bindPopup('Circle with 500m radius');
+            shapes.push(circle);
+            updateStats();
+        }
+
+        // Add random polygon
+        function addPolygon() {
+            const center = map.getCenter();
+            const offset = 0.01;
+            
+            const points = [
+                [center.lat + offset, center.lng + offset],
+                [center.lat + offset, center.lng - offset],
+                [center.lat - offset, center.lng - offset],
+                [center.lat - offset, center.lng + offset]
+            ];
+            
+            const polygon = L.polygon(points, {
+                color: '#e74c3c',
+                fillOpacity: 0.3
+            }).addTo(map);
+            
+            polygon.bindPopup('Random polygon');
+            shapes.push(polygon);
+            updateStats();
+        }
+
+        // Simulate heatmap with circles
+        let heatmapVisible = false;
+        const heatmapCircles = [];
+
+        function toggleHeatmap() {
+            if (heatmapVisible) {
+                // Remove heatmap
+                heatmapCircles.forEach(circle => map.removeLayer(circle));
+                heatmapCircles.length = 0;
+                heatmapVisible = false;
+            } else {
+                // Add heatmap simulation
+                const center = map.getCenter();
+                
+                for (let i = 0; i < 20; i++) {
+                    const lat = center.lat + (Math.random() - 0.5) * 0.05;
+                    const lng = center.lng + (Math.random() - 0.5) * 0.05;
+                    const intensity = Math.random();
+                    
+                    const circle = L.circle([lat, lng], {
+                        color: 'red',
+                        fillColor: 'red',
+                        fillOpacity: intensity * 0.5,
+                        radius: 100 + (intensity * 200)
+                    }).addTo(map);
+                    
+                    heatmapCircles.push(circle);
+                }
+                
+                heatmapVisible = true;
+            }
+        }
+
+        // Measure distance
+        function measureDistance() {
+            measureMode = !measureMode;
+            
+            if (measureMode) {
+                alert('Click two points on the map to measure distance');
+                measurePoints = [];
+            } else {
+                measurePoints = [];
+            }
+        }
+
+        // Map click for measuring
+        map.on('click', function(e) {
+            if (measureMode) {
+                measurePoints.push(e.latlng);
+                
+                // Add marker
+                L.circleMarker(e.latlng, {
+                    radius: 5,
+                    color: '#2ecc71'
+                }).addTo(map);
+                
+                if (measurePoints.length === 2) {
+                    const distance = measurePoints[0].distanceTo(measurePoints[1]);
+                    
+                    const line = L.polyline(measurePoints, {
+                        color: '#2ecc71'
+                    }).addTo(map);
+                    
+                    line.bindPopup(`Distance: ${(distance / 1000).toFixed(2)} km`).openPopup();
+                    
+                    shapes.push(line);
+                    measureMode = false;
+                    updateStats();
+                }
+            }
+        });
+
+        // Clear all
+        function clearAll() {
+            shapes.forEach(shape => map.removeLayer(shape));
+            shapes.length = 0;
+            
+            heatmapCircles.forEach(circle => map.removeLayer(circle));
+            heatmapCircles.length = 0;
+            heatmapVisible = false;
+            
+            updateStats();
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('stats').textContent = `Shapes: ${shapes.length}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rejestracja</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .register-container {
+            background: #fff;
+            padding: 20px 30px;
+            max-width: 400px;
+            margin: 40px auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        form > div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        input, select {
+            padding: 7px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .admin-info {
+            margin-top: 20px;
+            color: #ca2b2b;
+            font-weight: bold;
+            font-size: 0.95em;
+            text-align: center;
+        }
+        button {
+            background: #0099ff;
+            color: #fff;
+            border: none;
+            padding: 10px 0;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #007acc;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>Formularz rejestracji</h2>
+        <form action="#" method="post">
+            <div>
+                <label for="firstname">Imię:</label>
+                <input type="text" id="firstname" name="firstname" required>
+            </div>
+            <div>
+                <label for="lastname">Nazwisko:</label>
+                <input type="text" id="lastname" name="lastname" required>
+            </div>
+            <div>
+                <label for="username">Nazwa użytkownika:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="email">Adres e-mail:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div>
+                <label for="country">Kraj:</label>
+                <select id="country" name="country" required>
+                    <option value="">-- Wybierz kraj --</option>
+                    <option value="PL">Polska</option>
+                    <option value="DE">Niemcy</option>
+                    <option value="GB">Wielka Brytania</option>
+                    <option value="FR">Francja</option>
+                    <option value="UA">Ukraina</option>
+                    <!-- Dodaj więcej krajów w razie potrzeby -->
+                </select>
+            </div>
+            <div>
+                <label for="phone">Numer telefonu:</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <div>
+                <label for="password">Hasło:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div>
+                <label for="repeat-password">Powtórz hasło:</label>
+                <input type="password" id="repeat-password" name="repeat-password" required>
+            </div>
+            <button type="submit">Utwórz konto</button>
+        </form>
+        <div class="admin-info">
+            Aby utworzyć konto administratora, podaj nazwę użytkownika admin lub adres admin@... i hasło Admin16496@
+        </div>
+    </div>
+</body>
+</html>
