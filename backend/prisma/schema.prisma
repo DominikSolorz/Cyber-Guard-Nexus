@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"  
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  passwordHash  String
+  role          String
+  createdAt     DateTime    @default(now())
+  cases         Case[]      @relation("CaseCreatedBy")
+  caseMembers   CaseMember[]
+}
+
+model Case {
+  id          String      @id @default(uuid())
+  title       String
+  signature   String
+  court       String
+  status      String
+  priority    Int
+  tags        String[]
+  description String
+  createdAt   DateTime    @default(now())
+  tasks       Task[]
+  documents   Document[]
+  members     CaseMember[] @relation("CaseMembers")
+  createdBy   User        @relation("CaseCreatedBy")
+}
+
+model CaseMember {
+  id           String   @id @default(uuid())
+  case         Case     @relation("CaseMembers", fields: [caseId], references: [id])
+  caseId       String
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  permission   Permission
+}
+
+enum Permission {
+  VIEW
+  EDIT
+  FILES
+  EXPORT
+  AI
+}
+
+model Document {
+  id             String    @id @default(uuid())
+  case           Case      @relation(fields: [caseId], references: [id])
+  caseId         String
+  title          String
+  docType        String
+  docDate        DateTime
+  tags           String[]
+  isEvidence     Boolean
+  evidenceNo     String?
+  evidenceDesc   String?
+  createdAt      DateTime      @default(now())
+  fileVersions   FileVersion[]
+}
+
+model FileVersion {
+  id           String   @id @default(uuid())
+  document     Document @relation(fields: [documentId], references: [id])
+  documentId   String
+  version      Int
+  filename     String
+  mimeType     String
+  size         Int
+  sha256       String
+  storagePath  String
+  uploadedById String
+  createdAt    DateTime @default(now())
+}
