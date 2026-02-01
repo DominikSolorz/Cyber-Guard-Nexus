@@ -4,36 +4,34 @@ import { CommonModule, DatePipe, registerLocaleData } from '@angular/common';
 import localePl from '@angular/common/locales/pl';
 import { AuthService } from './services/auth.service';
 import { LoginComponent } from './components/login.component';
-import { DashboardComponent } from './components/dashboard.component';
+import { ClientDashboardComponent } from './components/client-dashboard.component';
+import { LawyerDashboardComponent } from './components/lawyer-dashboard.component';
 
 registerLocaleData(localePl, 'pl');
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, LoginComponent, DashboardComponent, DatePipe],
+  imports: [CommonModule, LoginComponent, ClientDashboardComponent, LawyerDashboardComponent, DatePipe],
   template: `
     @if (isLoading()) {
-      <div class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center text-white">
-         <div class="animate-spin text-4xl material-symbols-outlined mb-4 text-blue-500">sync</div>
-         <h1 class="text-2xl font-bold">E-Kancelaria Pro</h1>
+      <div class="fixed inset-0 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex flex-col items-center justify-center text-white">
+         <div class="mb-6">
+           <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-900/50 animate-pulse">
+             <span class="material-symbols-outlined text-5xl text-white">balance</span>
+           </div>
+         </div>
+         <h1 class="text-3xl font-bold mb-2">E-Kancelaria Pro</h1>
+         <p class="text-blue-300 text-sm">Ładowanie aplikacji...</p>
       </div>
     } @else {
       @if (auth.currentUser()) {
-         <nav class="bg-slate-900 border-b border-white/5 px-6 py-3 flex justify-between items-center text-white">
-            <div class="flex items-center gap-2 font-bold text-lg">
-               <span class="material-symbols-outlined text-blue-500">balance</span> E-Kancelaria Pro
-            </div>
-            <div class="flex items-center gap-4">
-               <span class="text-sm text-gray-400">{{ now | date:'shortTime' }}</span>
-               <div class="text-right">
-                  <div class="text-sm font-medium">{{ auth.currentUser()?.username }}</div>
-                  <div class="text-[10px] text-gray-500 uppercase">{{ auth.currentUser()?.role }}</div>
-               </div>
-               <button (click)="auth.logout()" class="p-2 hover:bg-white/10 rounded-full"><span class="material-symbols-outlined">logout</span></button>
-            </div>
-         </nav>
-         <app-dashboard></app-dashboard>
+         <!-- Route to appropriate dashboard based on user role -->
+         @if (auth.isClient()) {
+           <app-client-dashboard></app-client-dashboard>
+         } @else {
+           <app-lawyer-dashboard></app-lawyer-dashboard>
+         }
       } @else {
          <app-login></app-login>
       }
@@ -43,10 +41,10 @@ registerLocaleData(localePl, 'pl');
 export class AppComponent implements OnInit {
   auth = inject(AuthService);
   isLoading = signal(true);
-  now = new Date();
 
   ngOnInit() {
-     setTimeout(() => this.isLoading.set(false), 1000);
-     setInterval(() => this.now = new Date(), 60000);
+     setTimeout(() => this.isLoading.set(false), 800);
+  }
+}
   }
 }

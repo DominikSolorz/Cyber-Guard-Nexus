@@ -106,6 +106,42 @@ import { AuthService } from '../services/auth.service';
               </div>
             }
 
+            @if (success()) {
+              <div class="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-200 text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">check_circle</span>
+                {{ success() }}
+              </div>
+            }
+
+            <!-- Account Type Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-blue-100 mb-3">Typ konta</label>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  (click)="accountType.set('client')"
+                  [class]="accountType() === 'client' 
+                    ? 'bg-blue-600 border-blue-500 text-white' 
+                    : 'bg-white/5 border-white/20 text-blue-100 hover:bg-white/10'"
+                  class="border-2 rounded-lg p-4 transition-all text-center">
+                  <span class="material-symbols-outlined text-3xl mb-2">person</span>
+                  <div class="font-semibold">Klient</div>
+                  <div class="text-xs opacity-75">Osoba fizyczna/firma</div>
+                </button>
+                <button
+                  type="button"
+                  (click)="accountType.set('lawyer')"
+                  [class]="accountType() === 'lawyer' 
+                    ? 'bg-blue-600 border-blue-500 text-white' 
+                    : 'bg-white/5 border-white/20 text-blue-100 hover:bg-white/10'"
+                  class="border-2 rounded-lg p-4 transition-all text-center">
+                  <span class="material-symbols-outlined text-3xl mb-2">balance</span>
+                  <div class="font-semibold">Kancelaria</div>
+                  <div class="text-xs opacity-75">Adwokat/Radca prawny</div>
+                </button>
+              </div>
+            </div>
+
             <form (ngSubmit)="handleRegister()" class="space-y-4">
               <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -161,6 +197,98 @@ import { AuthService } from '../services/auth.service';
                   placeholder="+48 123 456 789"
                   class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               </div>
+
+              <!-- Lawyer-specific fields -->
+              @if (accountType() === 'lawyer') {
+                <div>
+                  <label class="block text-sm font-medium text-blue-100 mb-2">Zawód</label>
+                  <select 
+                    [(ngModel)]="registerData.profession" 
+                    name="profession"
+                    required
+                    class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="" class="bg-slate-800">Wybierz zawód</option>
+                    <option value="lawyer" class="bg-slate-800">Adwokat</option>
+                    <option value="attorney" class="bg-slate-800">Radca prawny</option>
+                    <option value="notary" class="bg-slate-800">Notariusz</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-blue-100 mb-2">Numer licencji/uprawnień</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="registerData.licenseNumber" 
+                    name="licenseNumber"
+                    placeholder="ADW/12345/2020"
+                    required
+                    class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-blue-100 mb-2">Specjalizacja (opcjonalnie)</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="registerData.specialization" 
+                    name="specialization"
+                    placeholder="Prawo karne, prawo rodzinne..."
+                    class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+              }
+
+              <!-- Client-specific fields -->
+              @if (accountType() === 'client') {
+                <div>
+                  <label class="block text-sm font-medium text-blue-100 mb-2">Typ klienta</label>
+                  <select 
+                    [(ngModel)]="registerData.clientType" 
+                    name="clientType"
+                    required
+                    class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="" class="bg-slate-800">Wybierz typ</option>
+                    <option value="individual" class="bg-slate-800">Osoba fizyczna</option>
+                    <option value="company" class="bg-slate-800">Firma</option>
+                  </select>
+                </div>
+
+                @if (registerData.clientType === 'individual') {
+                  <div>
+                    <label class="block text-sm font-medium text-blue-100 mb-2">PESEL (opcjonalnie)</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="registerData.pesel" 
+                      name="pesel"
+                      placeholder="85010112345"
+                      maxlength="11"
+                      class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                  </div>
+                }
+
+                @if (registerData.clientType === 'company') {
+                  <div>
+                    <label class="block text-sm font-medium text-blue-100 mb-2">Nazwa firmy</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="registerData.companyName" 
+                      name="companyName"
+                      placeholder="ABC Sp. z o.o."
+                      required
+                      class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-blue-100 mb-2">NIP</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="registerData.nip" 
+                      name="nip"
+                      placeholder="1234567890"
+                      required
+                      maxlength="10"
+                      class="w-full bg-white/10 border border-white/20 rounded-lg py-2.5 px-4 text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                  </div>
+                }
+              }
 
               <div>
                 <label class="block text-sm font-medium text-blue-100 mb-2">Hasło</label>
@@ -222,16 +350,27 @@ export class LoginComponent {
   password = '';
   showPassword = signal(false);
   error = signal('');
+  success = signal('');
   isRegistering = signal(false);
   confirmPassword = '';
+  accountType = signal<'client' | 'lawyer'>('client');
 
-  registerData = {
+  registerData: any = {
     email: '',
     username: '',
     password: '',
     firstName: '',
     lastName: '',
-    phone: ''
+    phone: '',
+    // Lawyer fields
+    profession: '',
+    licenseNumber: '',
+    specialization: '',
+    // Client fields
+    clientType: '',
+    pesel: '',
+    companyName: '',
+    nip: ''
   };
 
   handleLogin() {
@@ -249,6 +388,7 @@ export class LoginComponent {
 
   handleRegister() {
     this.error.set('');
+    this.success.set('');
     
     if(!this.registerData.email || !this.registerData.username || !this.registerData.password ||
        !this.registerData.firstName || !this.registerData.lastName) {
@@ -266,9 +406,43 @@ export class LoginComponent {
       return;
     }
 
-    const result = this.auth.register(this.registerData);
+    // Walidacja specyficzna dla typu konta
+    if(this.accountType() === 'lawyer') {
+      if(!this.registerData.profession || !this.registerData.licenseNumber) {
+        this.error.set('Wypełnij wszystkie pola dla kancelarii');
+        return;
+      }
+    }
+
+    if(this.accountType() === 'client') {
+      if(!this.registerData.clientType) {
+        this.error.set('Wybierz typ klienta');
+        return;
+      }
+      if(this.registerData.clientType === 'company' && (!this.registerData.companyName || !this.registerData.nip)) {
+        this.error.set('Wypełnij dane firmy');
+        return;
+      }
+    }
+
+    // Ustaw rolę
+    const dataToSubmit = {
+      ...this.registerData,
+      role: this.accountType() === 'lawyer' ? 'lawyer' : 'client',
+      specialization: this.registerData.specialization ? this.registerData.specialization.split(',').map((s: string) => s.trim()) : undefined
+    };
+
+    const result = this.auth.register(dataToSubmit);
     if(!result.success) {
       this.error.set(result.message || 'Błąd rejestracji');
+    } else {
+      if(result.needsVerification) {
+        this.success.set('Konto utworzone! Oczekiwanie na weryfikację przez administratora.');
+        setTimeout(() => {
+          this.isRegistering.set(false);
+          this.success.set('');
+        }, 3000);
+      }
     }
   }
 }
