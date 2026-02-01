@@ -31,6 +31,33 @@ export class AuthService {
      } else {
        this.users = [];
      }
+
+     // Utwórz konto admina jeśli nie istnieje
+     this.ensureAdminExists();
+  }
+
+  private ensureAdminExists() {
+     const adminExists = this.users.some(u => u.role === 'admin');
+     if (!adminExists) {
+       const adminUser: User = {
+         id: 'admin-001',
+         email: 'admin@ekancelaria.pl',
+         username: 'admin',
+         password: this.hashPassword('Admin2026!'),
+         role: 'admin',
+         firstName: 'Administrator',
+         lastName: 'Systemu',
+         phone: '+48 800 900 100',
+         isActive: true,
+         createdAt: new Date(),
+         settings: this.getDefaultSettings()
+       };
+       this.users.push(adminUser);
+       this.saveUsers();
+       console.log('✅ Konto admina utworzone!');
+       console.log('Login: admin');
+       console.log('Hasło: Admin2026!');
+     }
   }
 
   private getDefaultSettings(): UserSettings {
