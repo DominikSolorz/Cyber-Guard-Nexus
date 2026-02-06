@@ -91,8 +91,13 @@ const ChatView = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Chat AI (ChatGPT-4)
+      <Typography variant="h4" gutterBottom sx={{ 
+        background: 'linear-gradient(135deg, #ff006e 0%, #00f0ff 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        fontWeight: 700
+      }}>
+        🤖 Chat AI (GPT-4o Mini)
       </Typography>
 
       <Paper sx={{ height: 'calc(100vh - 250px)', display: 'flex', flexDirection: 'column' }}>
