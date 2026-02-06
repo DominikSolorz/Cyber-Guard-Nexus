@@ -121,6 +121,22 @@ const FilesView = () => {
 
   const handlePreview = async (file: File) => {
     console.log('Preview clicked for:', file.filename, 'type:', file.mime_type);
+    
+    // For PDF on mobile, open in new tab instead of iframe (better compatibility)
+    if (isPDF(file.mime_type)) {
+      try {
+        const response = await filesAPI.downloadFile(file.id);
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } catch (error) {
+        console.error('Failed to open PDF:', error);
+        alert('Błąd otwierania PDF: ' + error);
+      }
+      return;
+    }
+    
+    // For images and other files, use modal
     setPreviewFile(file);
     
     if (isImage(file.mime_type) && thumbnails[file.id]) {
@@ -261,7 +277,7 @@ const FilesView = () => {
                           }
                         }}
                       >
-                        {isImage(file.mime_type) ? 'Zobacz obraz' : isPDF(file.mime_type) ? 'Zobacz PDF' : 'Zobacz dokument'}
+                        {isImage(file.mime_type) ? 'Zobacz obraz' : isPDF(file.mime_type) ? 'Otwórz PDF' : 'Zobacz dokument'}
                       </Button>
                     )}
                     <Box sx={{ display: 'flex', gap: 1 }}>
@@ -346,20 +362,6 @@ const FilesView = () => {
                     objectFit: 'contain',
                     borderRadius: 1,
                     boxShadow: '0 4px 24px rgba(0, 240, 255, 0.2)',
-                  }}
-                />
-              )}
-              {isPDF(previewFile.mime_type) && (
-                <Box
-                  component="iframe"
-                  src={previewUrl}
-                  sx={{
-                    width: '100%',
-                    height: '70vh',
-                    border: 'none',
-                    borderRadius: 1,
-                    boxShadow: '0 4px 24px rgba(0, 240, 255, 0.2)',
-                    backgroundColor: 'white',
                   }}
                 />
               )}
