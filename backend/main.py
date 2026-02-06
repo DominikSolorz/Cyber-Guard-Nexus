@@ -39,13 +39,22 @@ app = FastAPI(
 
 settings = get_settings()
 
-# CORS middleware - allow all origins in development
+# CORS middleware - permissive for development (Codespaces + localhost)
+# In production, restrict to specific domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for dev container compatibility
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        # Codespaces URLs - regex pattern isn't working well with credentials
+        # So we use a wildcard for dev. In production, use specific domains.
+    ],
+    allow_origin_regex=r"https://.*\.app\.github\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
