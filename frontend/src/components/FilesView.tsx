@@ -14,7 +14,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility } from '@mui/icons-material';
-import { filesAPI } from '../services/api';
+import { filesAPI, getApiBaseUrl } from '../services/api';
 
 interface File {
   id: number;
@@ -122,15 +122,9 @@ const FilesView = () => {
   const handlePreview = async (file: File) => {
     console.log('Preview clicked for:', file.filename, 'type:', file.mime_type);
     
-    // For PDF - download and open with system PDF viewer (best mobile experience)
-    if (isPDF(file.mime_type)) {
-      handleDownload(file.id, file.filename);
-      return;
-    }
-    
-    // For images and other files, use modal
     setPreviewFile(file);
     
+    // For all file types, download and create blob URL
     if (isImage(file.mime_type) && thumbnails[file.id]) {
       setPreviewUrl(thumbnails[file.id]);
       setPreviewOpen(true);
@@ -319,12 +313,13 @@ const FilesView = () => {
         </Grid>
       )}
 
-      {/* Image Preview Dialog */}
+      {/* Preview Dialog */}
       <Dialog 
         open={previewOpen} 
         onClose={handleClosePreview}
-        maxWidth="lg"
+        maxWidth={isPDF(previewFile?.mime_type || '') ? false : 'lg'}
         fullWidth
+        fullScreen={isPDF(previewFile?.mime_type || '')}
         PaperProps={{
           sx: {
             backgroundColor: 'rgba(10, 10, 35, 0.95)',
@@ -340,7 +335,15 @@ const FilesView = () => {
         }}>
           {previewFile?.filename}
         </DialogTitle>
-        <DialogContent sx={{ p: 3, textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <DialogContent sx={{ 
+          p: isPDF(previewFile?.mime_type || '') ? 0 : 3, 
+          textAlign: 'center', 
+          minHeight: isPDF(previewFile?.mime_type || '') ? '100%' : '60vh', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'center',
+          overflow: isPDF(previewFile?.mime_type || '') ? 'hidden' : 'auto',
+        }}>
           {previewUrl && previewFile && (
             <>
               {isImage(previewFile.mime_type) && (
@@ -354,6 +357,20 @@ const FilesView = () => {
                     objectFit: 'contain',
                     borderRadius: 1,
                     boxShadow: '0 4px 24px rgba(0, 240, 255, 0.2)',
+                  }}
+                />
+              )}
+              {isPDF(previewFile.mime_type) && (
+                <Box
+                  component="iframe"
+                  src={previewUrl}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    minHeight: 'calc(100vh - 120px)',
+                    border: 'none',
+                    backgroundColor: 'white',
+                    touchAction: 'manipulation',
                   }}
                 />
               )}

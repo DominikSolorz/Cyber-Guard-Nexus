@@ -21,6 +21,9 @@ const getApiUrl = () => {
 const API_BASE_URL = getApiUrl();
 console.log('✅ Final API Base URL:', API_BASE_URL);
 
+// Export API base URL for constructing direct file URLs
+export const getApiBaseUrl = () => API_BASE_URL;
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
