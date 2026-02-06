@@ -212,51 +212,70 @@ const FilesView = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {new Date(file.created_at).toLocaleDateString('pl-PL')}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {isImage(file.mime_type) && (
-                      <IconButton
-                        size="small"
-                        color="primary"
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        startIcon={<Visibility />}
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePreview(file);
                         }}
                         sx={{
-                          border: '1px solid',
-                          borderColor: 'primary.main',
+                          background: 'linear-gradient(135deg, #ff006e 0%, #b967ff 100%)',
+                          fontWeight: 600,
+                          py: 1.5,
+                          fontSize: '1rem',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #ff3385 0%, #c77fff 100%)',
+                            transform: 'scale(1.02)',
+                          }
                         }}
                       >
-                        <Visibility />
-                      </IconButton>
+                        Zobacz obraz
+                      </Button>
                     )}
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(file.id, file.filename);
-                      }}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'info.main',
-                        color: 'info.main',
-                      }}
-                    >
-                      <Download />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(file.id);
-                      }}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'error.main',
-                      }}
-                    >
-                      <Delete />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        size="medium"
+                        startIcon={<Download />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(file.id, file.filename);
+                        }}
+                        sx={{
+                          borderColor: 'rgba(0, 240, 255, 0.5)',
+                          color: '#00f0ff',
+                          py: 1,
+                          '&:hover': {
+                            borderColor: '#00f0ff',
+                            backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                          }
+                        }}
+                      >
+                        Pobierz
+                      </Button>
+                      <IconButton
+                        size="medium"
+                        color="error"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(file.id);
+                        }}
+                        sx={{
+                          border: '2px solid',
+                          borderColor: 'error.main',
+                          width: 48,
+                          height: 48,
+                        }}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Box>
                   </Box>
                 </CardContent>
               </Card>
