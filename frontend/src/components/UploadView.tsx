@@ -116,7 +116,7 @@ const UploadView = () => {
       </Paper>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-        Maksymalny rozmiar pliku: 100 MB
+        Maksymalny rozmiar pliku: 5 GB
       </Typography>
     </Box>
   );
