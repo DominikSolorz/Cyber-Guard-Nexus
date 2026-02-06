@@ -50,6 +50,28 @@ const FilesView = () => {
     return mimeType?.startsWith('image/');
   };
 
+  const isPDF = (mimeType: string) => {
+    return mimeType === 'application/pdf';
+  };
+
+  const isWord = (mimeType: string) => {
+    return mimeType?.includes('word') || 
+           mimeType?.includes('document') ||
+           mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+           mimeType === 'application/msword';
+  };
+
+  const isPreviewable = (mimeType: string) => {
+    return isImage(mimeType) || isPDF(mimeType) || isWord(mimeType);
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (isImage(mimeType)) return <ImageIcon sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.3)' }} />;
+    if (isPDF(mimeType)) return <FolderIcon sx={{ fontSize: 64, color: 'rgba(255, 0, 110, 0.5)' }} />;
+    if (isWord(mimeType)) return <FolderIcon sx={{ fontSize: 64, color: 'rgba(0, 240, 255, 0.5)' }} />;
+    return <FolderIcon sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.3)' }} />;
+  };
+
   const loadThumbnail = async (fileId: number) => {
     try {
       const response = await filesAPI.downloadFile(fileId);
@@ -158,14 +180,14 @@ const FilesView = () => {
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  cursor: isImage(file.mime_type) ? 'pointer' : 'default',
+                  cursor: isPreviewable(file.mime_type) ? 'pointer' : 'default',
                   transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': isImage(file.mime_type) ? {
+                  '&:hover': isPreviewable(file.mime_type) ? {
                     transform: 'translateY(-4px)',
                     boxShadow: '0 8px 24px rgba(255, 0, 110, 0.3)',
                   } : {}
                 }}
-                onClick={() => isImage(file.mime_type) && handlePreview(file)}
+                onClick={() => isPreviewable(file.mime_type) && handlePreview(file)}
               >
                 {isImage(file.mime_type) && thumbnails[file.id] ? (
                   <CardMedia
@@ -188,11 +210,7 @@ const FilesView = () => {
                       background: 'linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%)',
                     }}
                   >
-                    {isImage(file.mime_type) ? (
-                      <ImageIcon sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.3)' }} />
-                    ) : (
-                      <FolderIcon sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.3)' }} />
-                    )}
+                    {getFileIcon(file.mime_type)}
                   </Box>
                 )}
                 <CardContent sx={{ flexGrow: 1 }}>
@@ -213,7 +231,7 @@ const FilesView = () => {
                     {new Date(file.created_at).toLocaleDateString('pl-PL')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {isImage(file.mime_type) && (
+                    {isPreviewable(file.mime_type) && (
                       <Button
                         fullWidth
                         variant="contained"
@@ -234,7 +252,7 @@ const FilesView = () => {
                           }
                         }}
                       >
-                        Zobacz obraz
+                        {isImage(file.mime_type) ? 'Zobacz obraz' : isPDF(file.mime_type) ? 'Zobacz PDF' : 'Zobacz dokument'}
                       </Button>
                     )}
                     <Box sx={{ display: 'flex', gap: 1 }}>
@@ -305,20 +323,74 @@ const FilesView = () => {
         }}>
           {previewFile?.filename}
         </DialogTitle>
-        <DialogContent sx={{ p: 3, textAlign: 'center' }}>
-          {previewUrl && (
-            <Box
-              component="img"
-              src={previewUrl}
-              alt={previewFile?.filename}
-              sx={{
-                maxWidth: '100%',
-                maxHeight: '70vh',
-                objectFit: 'contain',
-                borderRadius: 1,
-                boxShadow: '0 4px 24px rgba(0, 240, 255, 0.2)',
-              }}
-            />
+        <DialogContent sx={{ p: 3, textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {previewUrl && previewFile && (
+            <>
+              {isImage(previewFile.mime_type) && (
+                <Box
+                  component="img"
+                  src={previewUrl}
+                  alt={previewFile.filename}
+                  sx={{
+                    maxWidth: '100%',
+                    maxHeight: '70vh',
+                    objectFit: 'contain',
+                    borderRadius: 1,
+                    boxShadow: '0 4px 24px rgba(0, 240, 255, 0.2)',
+                  }}
+                />
+              )}
+              {isPDF(previewFile.mime_type) && (
+                <Box
+                  component="iframe"
+                  src={previewUrl}
+                  sx={{
+                    width: '100%',
+                    height: '70vh',
+                    border: 'none',
+                    borderRadius: 1,
+                    boxShadow: '0 4px 24px rgba(0, 240, 255, 0.2)',
+                    backgroundColor: 'white',
+                  }}
+                />
+              )}
+              {isWord(previewFile.mime_type) && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: 3,
+                  py: 4,
+                }}>
+                  <FolderIcon sx={{ fontSize: 100, color: 'rgba(0, 240, 255, 0.5)' }} />
+                  <Typography variant="h5" sx={{ color: '#00f0ff' }}>
+                    Dokument Word
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500 }}>
+                    Podgląd dokumentów Word wymaga pobrania pliku. 
+                    Kliknij przycisk "Pobierz" poniżej aby otworzyć dokument.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<Download />}
+                    onClick={() => previewFile && handleDownload(previewFile.id, previewFile.filename)}
+                    sx={{
+                      background: 'linear-gradient(135deg, #ff006e 0%, #b967ff 100%)',
+                      fontWeight: 600,
+                      px: 4,
+                      py: 1.5,
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #ff3385 0%, #c77fff 100%)',
+                      }
+                    }}
+                  >
+                    Pobierz dokument
+                  </Button>
+                </Box>
+              )}
+            </>
           )}
         </DialogContent>
         <DialogActions sx={{
