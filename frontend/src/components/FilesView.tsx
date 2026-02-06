@@ -13,9 +13,8 @@ import {
   DialogTitle,
   DialogActions,
 } from '@mui/material';
-import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility } from '@mui/icons-material';
+import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { filesAPI, getApiBaseUrl } from '../services/api';
-import PDFViewer from './PDFViewer';
 
 interface File {
   id: number;
@@ -33,6 +32,7 @@ const FilesView = () => {
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
+  const [pdfScale, setPdfScale] = useState<number>(1.0);
 
   useEffect(() => {
     loadFiles();
@@ -151,6 +151,15 @@ const FilesView = () => {
   const handleClosePreview = () => {
     setPreviewOpen(false);
     setPreviewFile(null);
+    setPdfScale(1.0);
+  };
+
+  const handleZoomIn = () => {
+    setPdfScale(prev => Math.min(prev + 0.25, 3.0));
+  };
+
+  const handleZoomOut = () => {
+    setPdfScale(prev => Math.max(prev - 0.25, 0.5));
   };
 
   const formatFileSize = (bytes: number) => {
@@ -362,8 +371,70 @@ const FilesView = () => {
                 />
               )}
               {isPDF(previewFile.mime_type) && (
-                <Box sx={{ width: '100%', height: 'calc(100vh - 120px)' }}>
-                  <PDFViewer fileUrl={previewUrl} />
+                <Box sx={{ width: '100%', height: 'calc(100vh - 120px)', position: 'relative' }}>
+                  {/* Zoom Controls Bar */}
+                  <Box sx={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 2,
+                    p: 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderBottom: '1px solid rgba(255, 0, 110, 0.3)',
+                    zIndex: 10,
+                  }}>
+                    <IconButton 
+                      onClick={handleZoomOut}
+                      disabled={pdfScale <= 0.5}
+                      sx={{ 
+                        color: '#ff006e',
+                        border: '1px solid #ff006e',
+                        '&:disabled': { opacity: 0.3 }
+                      }}
+                    >
+                      <ZoomOut />
+                    </IconButton>
+                    <Typography variant="body1" sx={{ color: '#fff', minWidth: 60, textAlign: 'center', fontWeight: 600 }}>
+                      {Math.round(pdfScale * 100)}%
+                    </Typography>
+                    <IconButton 
+                      onClick={handleZoomIn}
+                      disabled={pdfScale >= 3.0}
+                      sx={{ 
+                        color: '#00f0ff',
+                        border: '1px solid #00f0ff',
+                        '&:disabled': { opacity: 0.3 }
+                      }}
+                    >
+                      <ZoomIn />
+                    </IconButton>
+                  </Box>
+                  
+                  {/* PDF iframe with zoom */}
+                  <Box sx={{ 
+                    width: '100%', 
+                    height: 'calc(100% - 52px)',
+                    marginTop: '52px',
+                    overflow: 'auto',
+                    backgroundColor: '#2a2a2a',
+                  }}>
+                    <Box
+                      component="iframe"
+                      src={previewUrl}
+                      sx={{
+                        width: `${100 / pdfScale}%`,
+                        height: `${100 / pdfScale}%`,
+                        transform: `scale(${pdfScale})`,
+                        transformOrigin: 'top left',
+                        border: 'none',
+                        backgroundColor: 'white',
+                      }}
+                    />
+                  </Box>
                 </Box>
               )}
               {isWord(previewFile.mime_type) && (
