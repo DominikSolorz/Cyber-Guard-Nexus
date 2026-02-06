@@ -1,0 +1,36 @@
+# FastAPI Framework
+fastapi==0.128.2
+uvicorn[standard]==0.40.0
+python-multipart==0.0.20
+
+# Database
+sqlalchemy==2.0.46
+psycopg2-binary==2.9.10
+alembic==1.18.3
+
+# Redis
+redis==7.1.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==5.0.0
+
+# Email
+aiosmtplib==5.1.0
+aioimaplib==1.1.0
+email-validator==2.2.0
+
+# OpenAI
+openai==1.59.7
+
+# Environment variables
+python-dotenv==1.0.1
+
+# File handling
+python-magic==0.4.27
+pillow==11.1.0
+
+# Utilities
+pydantic==2.10.5
+pydantic-settings==2.7.1
