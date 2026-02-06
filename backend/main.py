@@ -12,6 +12,12 @@ import os
 
 from database import get_db, Base, engine
 from models import User, Folder, File, AIChat, AIMessage, Email
+from schemas import (
+    UserRegister, UserLogin, Token, UserResponse,
+    FileResponse, FolderCreate, FolderResponse,
+    ChatCreate, MessageCreate, MessageResponse, ChatResponse,
+    EmailSend, EmailResponse
+)
 from auth import (
     get_password_hash, verify_password, create_access_token, 
     get_current_user
@@ -33,10 +39,10 @@ app = FastAPI(
 
 settings = get_settings()
 
-# CORS middleware
+# CORS middleware - allow all origins in development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],  # Allow all origins for dev container compatibility
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,26 +55,23 @@ app.add_middleware(
 
 @app.post("/api/auth/register")
 async def register(
-    email: str,
-    username: str,
-    password: str,
-    full_name: Optional[str] = None,
+    user_data: UserRegister,
     db: Session = Depends(get_db)
 ):
     """Register new user"""
     # Check if user exists
-    if db.query(User).filter(User.email == email).first():
+    if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    if db.query(User).filter(User.username == username).first():
+    if db.query(User).filter(User.username == user_data.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
     
     # Create user
     user = User(
-        email=email,
-        username=username,
-        hashed_password=get_password_hash(password),
-        full_name=full_name
+        email=user_data.email,
+        username=user_data.username,
+        hashed_password=get_password_hash(user_data.password),
+        full_name=user_data.full_name
     )
     
     db.add(user)

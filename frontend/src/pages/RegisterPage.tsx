@@ -8,7 +8,13 @@ import {
   Paper,
   Link,
   Alert,
+  IconButton,
+  InputAdornment,
+  FormControlLabel,
+  Checkbox,
+  FormGroup,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
@@ -21,10 +27,24 @@ const RegisterPage = () => {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!acceptTerms) {
+      setError('Musisz zaakceptować regulamin');
+      return;
+    }
+
+    if (!acceptPrivacy) {
+      setError('Musisz zaakceptować politykę prywatności');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Hasła nie są identyczne');
@@ -106,25 +126,86 @@ const RegisterPage = () => {
           <TextField
             fullWidth
             label="Hasło"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             variant="outlined"
             margin="normal"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             helperText="Minimum 6 znaków"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           <TextField
             fullWidth
             label="Potwierdź hasło"
-            type="password"
+            type={showConfirmPassword ? 'text' : 'password'}
             variant="outlined"
             margin="normal"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    edge="end"
+                  >
+                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
+
+          <FormGroup sx={{ mt: 2 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Akceptuję{' '}
+                  <Link href="#" underline="hover">
+                    Regulamin
+                  </Link>
+                </Typography>
+              }
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={acceptPrivacy}
+                  onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Akceptuję{' '}
+                  <Link href="#" underline="hover">
+                    Politykę Prywatności
+                  </Link>
+                </Typography>
+              }
+            />
+          </FormGroup>
 
           <Button
             fullWidth
