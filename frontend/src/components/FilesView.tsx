@@ -122,17 +122,9 @@ const FilesView = () => {
   const handlePreview = async (file: File) => {
     console.log('Preview clicked for:', file.filename, 'type:', file.mime_type);
     
-    // For PDF on mobile, open in new tab instead of iframe (better compatibility)
+    // For PDF - download and open with system PDF viewer (best mobile experience)
     if (isPDF(file.mime_type)) {
-      try {
-        const response = await filesAPI.downloadFile(file.id);
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-      } catch (error) {
-        console.error('Failed to open PDF:', error);
-        alert('Błąd otwierania PDF: ' + error);
-      }
+      handleDownload(file.id, file.filename);
       return;
     }
     
@@ -277,7 +269,7 @@ const FilesView = () => {
                           }
                         }}
                       >
-                        {isImage(file.mime_type) ? 'Zobacz obraz' : isPDF(file.mime_type) ? 'Otwórz PDF' : 'Zobacz dokument'}
+                        {isImage(file.mime_type) ? 'Zobacz obraz' : isPDF(file.mime_type) ? 'Zobacz PDF' : 'Zobacz dokument'}
                       </Button>
                     )}
                     <Box sx={{ display: 'flex', gap: 1 }}>
