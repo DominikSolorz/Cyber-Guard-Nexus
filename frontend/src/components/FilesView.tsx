@@ -120,18 +120,27 @@ const FilesView = () => {
   };
 
   const handlePreview = async (file: File) => {
+    console.log('Preview clicked for:', file.filename, 'type:', file.mime_type);
     setPreviewFile(file);
-    if (thumbnails[file.id]) {
+    
+    if (isImage(file.mime_type) && thumbnails[file.id]) {
       setPreviewUrl(thumbnails[file.id]);
       setPreviewOpen(true);
     } else {
       try {
         const response = await filesAPI.downloadFile(file.id);
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        console.log('File downloaded, creating blob...');
+        
+        // Create blob with correct MIME type
+        const blob = new Blob([response.data], { type: file.mime_type });
+        const url = window.URL.createObjectURL(blob);
+        console.log('Blob URL created:', url);
+        
         setPreviewUrl(url);
         setPreviewOpen(true);
       } catch (error) {
         console.error('Failed to load preview:', error);
+        alert('Błąd ładowania podglądu: ' + error);
       }
     }
   };
