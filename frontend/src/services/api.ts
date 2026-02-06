@@ -6,13 +6,20 @@ const getApiUrl = () => {
   if (window.location.hostname.includes('github.dev')) {
     // Replace frontend port (5173) with backend port (8000) in the URL
     const backendUrl = window.location.origin.replace('-5173.', '-8000.');
+    console.log('🔧 Codespaces detected!');
+    console.log('Frontend URL:', window.location.origin);
+    console.log('Backend URL:', backendUrl);
     return `${backendUrl}/api`;
   }
   // Use environment variable or fallback to localhost
-  return import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  const localUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  console.log('🔧 Local development detected!');
+  console.log('API URL:', localUrl);
+  return localUrl;
 };
 
 const API_BASE_URL = getApiUrl();
+console.log('✅ Final API Base URL:', API_BASE_URL);
 
 // Create axios instance
 const api = axios.create({

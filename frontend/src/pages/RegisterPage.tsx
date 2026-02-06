@@ -67,7 +67,11 @@ const RegisterPage = () => {
       localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Błąd rejestracji');
+      console.error('Registration error:', err);
+      const errorMessage = err.response?.data?.detail 
+        || err.message 
+        || 'Błąd rejestracji. Sprawdź połączenie z serwerem.';
+      setError(`${errorMessage}\n\nAPI URL: ${err.config?.baseURL || 'unknown'}`);
     } finally {
       setLoading(false);
     }
