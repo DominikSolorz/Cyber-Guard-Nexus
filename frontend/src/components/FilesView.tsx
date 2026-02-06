@@ -317,12 +317,12 @@ const FilesView = () => {
       <Dialog 
         open={previewOpen} 
         onClose={handleClosePreview}
-        maxWidth={isPDF(previewFile?.mime_type || '') ? false : 'lg'}
+        maxWidth={previewFile && isPDF(previewFile.mime_type) ? false : 'lg'}
         fullWidth
-        fullScreen={isPDF(previewFile?.mime_type || '')}
+        fullScreen={previewFile ? isPDF(previewFile.mime_type) : false}
         PaperProps={{
           sx: {
-            backgroundColor: 'rgba(10, 10, 35, 0.95)',
+            backgroundColor: previewFile && isPDF(previewFile.mime_type) ? 'black' : 'rgba(10, 10, 35, 0.95)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 0, 110, 0.3)',
             boxShadow: '0 8px 32px rgba(255, 0, 110, 0.3)',
@@ -336,13 +336,13 @@ const FilesView = () => {
           {previewFile?.filename}
         </DialogTitle>
         <DialogContent sx={{ 
-          p: isPDF(previewFile?.mime_type || '') ? 0 : 3, 
+          p: previewFile && isPDF(previewFile.mime_type) ? 0 : 3, 
           textAlign: 'center', 
-          minHeight: isPDF(previewFile?.mime_type || '') ? '100%' : '60vh', 
+          minHeight: previewFile && isPDF(previewFile.mime_type) ? '100%' : '60vh', 
           display: 'flex', 
           flexDirection: 'column', 
           justifyContent: 'center',
-          overflow: isPDF(previewFile?.mime_type || '') ? 'hidden' : 'auto',
+          overflow: previewFile && isPDF(previewFile.mime_type) ? 'hidden' : 'auto',
         }}>
           {previewUrl && previewFile && (
             <>
