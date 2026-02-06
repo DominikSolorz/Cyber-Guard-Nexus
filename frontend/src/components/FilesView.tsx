@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogActions,
 } from '@mui/material';
-import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility } from '@mui/icons-material';
+import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility } from '@mui/icons-material';
 import { filesAPI, getApiBaseUrl } from '../services/api';
 import PDFViewer from './PDFViewer';
 
