@@ -13,8 +13,9 @@ import {
   DialogTitle,
   DialogActions,
 } from '@mui/material';
-import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility } from '@mui/icons-material';
+import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility import { Download, Delete, Folder as FolderIcon, Image as ImageIcon, Visibility } from '@mui/icons-material';
 import { filesAPI, getApiBaseUrl } from '../services/api';
+import PDFViewer from './PDFViewer';
 
 interface File {
   id: number;
@@ -361,18 +362,9 @@ const FilesView = () => {
                 />
               )}
               {isPDF(previewFile.mime_type) && (
-                <Box
-                  component="iframe"
-                  src={previewUrl}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    minHeight: 'calc(100vh - 120px)',
-                    border: 'none',
-                    backgroundColor: 'white',
-                    touchAction: 'manipulation',
-                  }}
-                />
+                <Box sx={{ width: '100%', height: 'calc(100vh - 120px)' }}>
+                  <PDFViewer fileUrl={previewUrl} />
+                </Box>
               )}
               {isWord(previewFile.mime_type) && (
                 <Box sx={{ 
