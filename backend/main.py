@@ -4,7 +4,7 @@ Main FastAPI application - API endpoints
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File as FastAPIFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse as FastAPIFileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import timedelta
@@ -14,7 +14,7 @@ from database import get_db, Base, engine
 from models import User, Folder, File, AIChat, AIMessage, Email
 from schemas import (
     UserRegister, UserLogin, Token, UserResponse,
-    FileResponse, FolderCreate, FolderResponse,
+    FileResponse as FileResponseSchema, FolderCreate, FolderResponse,
     ChatCreate, MessageCreate, MessageResponse, ChatResponse,
     EmailSend, EmailResponse
 )
@@ -212,7 +212,7 @@ async def download_file(
     if not os.path.exists(file.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
     
-    return FileResponse(
+    return FastAPIFileResponse(
         path=file.file_path,
         filename=file.original_filename,
         media_type=file.mime_type
