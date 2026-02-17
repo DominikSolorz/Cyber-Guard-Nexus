@@ -1,3 +1,11 @@
 # Klucze API - NIE PUSHUJ
 .env
 KLUCZE_API.txt
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
