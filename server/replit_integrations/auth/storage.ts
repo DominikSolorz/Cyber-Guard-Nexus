@@ -2,7 +2,7 @@ import { users, type User, type UpsertUser } from "@shared/schema";
 import { db } from "../../db";
 import { eq } from "drizzle-orm";
 
-const ADMIN_EMAIL = "goldservicepoland@gmail.com";
+const ADMIN_EMAILS = ["goldservicepoland@gmail.com", "grzegorzdur3@gmail.com"];
 
 export interface IAuthStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -16,7 +16,7 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const isAdminEmail = userData.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    const isAdminEmail = ADMIN_EMAILS.some(e => userData.email?.toLowerCase() === e.toLowerCase());
     const [user] = await db
       .insert(users)
       .values({
