@@ -47,54 +47,24 @@ export default function Admin() {
     },
   });
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Skeleton className="h-8 w-48" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    window.location.href = "/api/login";
-    return null;
-  }
+  if (!user) return null;
 
   if (!user.isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <ShieldOff className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-muted-foreground mb-2">Brak uprawnien</h3>
           <p className="text-sm text-muted-foreground/70 mb-4">
             Nie masz uprawnien administratora.
           </p>
-          <Button variant="outline" onClick={() => setLocation("/dashboard")} data-testid="button-back-dashboard">
-            Powrot do panelu
-          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 h-14 gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="button-back">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">
-              Lex<span className="text-primary">Vault</span>
-              <span className="text-muted-foreground font-normal ml-2 text-sm">Panel administratora</span>
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 max-w-4xl mx-auto w-full">
+    <div className="p-4 max-w-4xl mx-auto w-full">
         <div className="flex items-center gap-2 mb-6">
           <Users className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-semibold">Uzytkownicy</h2>
@@ -156,7 +126,6 @@ export default function Admin() {
             ))}
           </div>
         )}
-      </main>
 
       <Dialog open={!!deleteUserId} onOpenChange={(open) => !open && setDeleteUserId(null)}>
         <DialogContent>

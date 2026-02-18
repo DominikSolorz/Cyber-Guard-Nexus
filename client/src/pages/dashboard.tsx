@@ -33,60 +33,26 @@ function isLawyer(role: string | null | undefined): boolean {
 }
 
 export default function Dashboard() {
-  const { user, isLoading: authLoading, logout } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><Skeleton className="h-8 w-48" /></div>;
-  }
-  if (!user) { window.location.href = "/api/login"; return null; }
-  if (!user.onboardingCompleted) { window.location.href = "/onboarding"; return null; }
-  // if (!user.emailVerified) { window.location.href = "/verify-email"; return null; }
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 h-14 gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg hidden sm:inline">Lex<span className="text-primary">Vault</span></span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/chat")} data-testid="button-chat">
-              <MessageSquare className="h-4 w-4 mr-1" /><span className="hidden md:inline">Czat AI</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/calendar")} data-testid="button-calendar">
-              <Calendar className="h-4 w-4 mr-1" /><span className="hidden md:inline">Kalendarz</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/profile")} data-testid="button-profile">
-              <Settings className="h-4 w-4 mr-1" /><span className="hidden md:inline">Profil</span>
-            </Button>
-            {user.isAdmin && (
-              <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-admin">
-                <Users className="h-4 w-4 mr-1" /><span className="hidden md:inline">Admin</span>
-              </Button>
-            )}
-            <Badge variant="secondary" className="hidden md:inline-flex">
-              {user.role === "adwokat" ? "Adwokat" : user.role === "radca_prawny" ? "Radca prawny" : user.role === "firma" ? "Firma" : "Klient"}
-            </Badge>
-            <span className="text-sm text-muted-foreground hidden lg:inline" data-testid="text-username">
-              {user.firstName} {user.lastName}
-            </span>
-            <Button variant="ghost" size="icon" onClick={() => logout()} data-testid="button-logout">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 max-w-7xl mx-auto w-full">
-        {isLawyer(user.role) ? (
-          <LawyerDashboard />
-        ) : (
-          <ClientDashboard />
-        )}
-      </main>
+    <div className="p-4 max-w-7xl mx-auto w-full">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold" data-testid="text-dashboard-title">
+          Witaj, {user.firstName}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isLawyer(user.role) ? "Zarzadzaj sprawami, klientami i dokumentami" : "Przegladaj swoje sprawy i komunikuj sie z prawnikiem"}
+        </p>
+      </div>
+      {isLawyer(user.role) ? (
+        <LawyerDashboard />
+      ) : (
+        <ClientDashboard />
+      )}
     </div>
   );
 }

@@ -147,29 +147,19 @@ export default function CalendarPage() {
 
   const selectedDayHearings = selectedDate ? getHearingsForDate(selectedDate) : [];
 
-  if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><Skeleton className="h-8 w-48" /></div>;
-  }
-  if (!user) { window.location.href = "/api/login"; return null; }
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 h-14 max-w-7xl mx-auto gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="button-back-dashboard">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Shield className="h-5 w-5 text-primary" />
-            <span className="font-bold text-lg">Kalendarz</span>
+    <div className="p-4 max-w-7xl mx-auto w-full">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold" data-testid="text-calendar-title">Kalendarz</h1>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex border border-border rounded-md overflow-visible">
+            <Button variant={viewMode === "month" ? "default" : "ghost"} size="sm" className="rounded-none rounded-l-md" onClick={() => setViewMode("month")} data-testid="button-view-month">Miesiac</Button>
+            <Button variant={viewMode === "week" ? "default" : "ghost"} size="sm" className="rounded-none rounded-r-md" onClick={() => setViewMode("week")} data-testid="button-view-week">Tydzien</Button>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex border border-border rounded-md overflow-visible">
-              <Button variant={viewMode === "month" ? "default" : "ghost"} size="sm" className="rounded-none rounded-l-md" onClick={() => setViewMode("month")} data-testid="button-view-month">Miesiac</Button>
-              <Button variant={viewMode === "week" ? "default" : "ghost"} size="sm" className="rounded-none rounded-r-md" onClick={() => setViewMode("week")} data-testid="button-view-week">Tydzien</Button>
-            </div>
-            <Button variant="outline" size="sm" onClick={goToToday} data-testid="button-today">Dzisiaj</Button>
-            {isLawyer(user.role) && (
+          <Button variant="outline" size="sm" onClick={goToToday} data-testid="button-today">Dzisiaj</Button>
+          {isLawyer(user.role) && (
               <Dialog open={newHearingOpen} onOpenChange={setNewHearingOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" data-testid="button-new-hearing"><Plus className="h-4 w-4 mr-1" />Nowy termin</Button>
@@ -239,9 +229,7 @@ export default function CalendarPage() {
             )}
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card>
@@ -396,7 +384,6 @@ export default function CalendarPage() {
             </Card>
           </div>
         </div>
-      </main>
     </div>
   );
 }

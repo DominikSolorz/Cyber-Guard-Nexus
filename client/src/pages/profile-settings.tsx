@@ -54,26 +54,13 @@ export default function ProfileSettings() {
     },
   });
 
-  if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><Skeleton className="h-8 w-48" /></div>;
-  }
-  if (!user) { window.location.href = "/api/login"; return null; }
+  if (!user) return null;
 
   const roleLabel = user.role === "adwokat" ? "Adwokat" : user.role === "radca_prawny" ? "Radca prawny" : user.role === "firma" ? "Firma" : "Klient indywidualny";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="flex items-center gap-3 px-4 h-14 max-w-4xl mx-auto flex-wrap">
-          <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="button-back-dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Shield className="h-5 w-5 text-primary" />
-          <span className="font-bold text-lg">Ustawienia profilu</span>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <h1 className="text-2xl font-bold" data-testid="text-profile-title">Ustawienia profilu</h1>
         <Card>
           <CardHeader className="flex flex-row items-center gap-3 pb-2">
             <User className="h-5 w-5 text-primary" />
@@ -211,7 +198,6 @@ export default function ProfileSettings() {
             </div>
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

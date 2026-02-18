@@ -130,33 +130,20 @@ export default function CaseDetail() {
     }
   };
 
-  if (authLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><Skeleton className="h-8 w-48" /></div>;
-  if (!user) { window.location.href = "/api/login"; return null; }
+  if (!user) return null;
 
   return (
-    <div className="h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 h-14 gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="button-back">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Shield className="h-6 w-6 text-primary shrink-0" />
-            <div className="min-w-0">
-              <span className="font-bold text-lg truncate block">
-                Lex<span className="text-primary">Vault</span>
-              </span>
-            </div>
-          </div>
-          {caseData && (
-            <div className="flex items-center gap-2 min-w-0">
-              <Scale className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-sm font-medium truncate" data-testid="text-case-title">{caseData.title}</span>
-              {caseData.caseNumber && <Badge variant="secondary" className="shrink-0">{caseData.caseNumber}</Badge>}
-            </div>
-          )}
+    <div className="h-full flex flex-col">
+      {caseData && (
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0 flex-wrap">
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="button-back">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Scale className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm font-medium truncate" data-testid="text-case-title">{caseData.title}</span>
+          {caseData.caseNumber && <Badge variant="secondary" className="shrink-0">{caseData.caseNumber}</Badge>}
         </div>
-      </header>
+      )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-3">

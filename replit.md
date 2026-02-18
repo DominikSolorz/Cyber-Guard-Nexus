@@ -125,6 +125,8 @@ Dominik Solarz, ul. Piastowska 2/1, 40-005 Katowice
 Email: goldservicepoland@gmail.com
 
 ## Recent Changes
+- Voice features in AI Chat: Speech-to-Text (Web Speech API, pl-PL) for voice input via microphone button, Text-to-Speech (SpeechSynthesis API, pl-PL) for listening to AI responses with per-message "Odsluchaj" button, auto-speak toggle for automatic reading of new responses
+- Collapsible sidebar navigation: Shadcn Sidebar with AppSidebar + AuthenticatedLayout wrapper for all authenticated pages (Dashboard, Czat AI, Kalendarz, Profil, Admin)
 - Registration flow merged with onboarding: 4-step wizard (role, basic data + password, address, professional info) integrated into login page with Login/Register tabs
 - Dual auth: email/password registration + Replit Auth (OIDC)
 - Enhanced document management: rename folders/files via context menus, download/print/preview buttons, file format conversion (JPG/PNG→PDF, PDF→JPG, DOCX→PDF)
