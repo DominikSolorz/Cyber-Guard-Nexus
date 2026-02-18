@@ -37,7 +37,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 glass-strong animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
@@ -131,31 +131,31 @@ export default function Landing() {
         )}
       </nav>
 
-      <section className="relative pt-16 min-h-[600px] flex items-center overflow-hidden" data-testid="section-hero">
+      <section className="relative pt-16 min-h-[600px] flex items-center overflow-hidden bg-gradient-mesh" data-testid="section-hero">
         <div className="absolute inset-0">
           <img
             src={heroLawImg}
             alt="Kancelaria prawna"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-90"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/40 bg-primary/15 text-primary text-sm mb-6">
-              <Scale className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/40 bg-primary/15 text-primary text-sm mb-6 glass animate-fade-in-up">
+              <Scale className="h-3.5 w-3.5 animate-float" />
               <span>Profesjonalna platforma prawna</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6 text-white">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6 text-white animate-fade-in-up" style={{animationDelay: "0.1s"}}>
               Nowoczesne zarzadzanie
               <br />
               <span className="text-primary">kancelaria prawna</span>
             </h1>
-            <p className="text-lg sm:text-xl text-gray-300 leading-relaxed mb-8 max-w-xl">
+            <p className="text-lg sm:text-xl text-gray-300 leading-relaxed mb-8 max-w-xl animate-fade-in-up" style={{animationDelay: "0.2s"}}>
               LexVault to kompleksowy system do prowadzenia spraw prawnych, komunikacji z klientami, obiegu dokumentow i analizy prawnej z asystentem AI. Bezpiecznie i zgodnie z RODO.
             </p>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap animate-fade-in-up" style={{animationDelay: "0.3s"}}>
               {user ? (
                 <Link href="/dashboard">
                   <Button size="lg" data-testid="button-hero-dashboard">
@@ -198,10 +198,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6 animate-fade-in-up">
                 Platforma stworzona
                 <br />
-                <span className="text-primary">dla profesjonalistow</span>
+                <span className="gradient-text">dla profesjonalistow</span>
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
                 LexVault to zaawansowany system zarzadzania kancelaria prawna, ktory laczy w sobie
@@ -232,14 +232,14 @@ export default function Landing() {
               </div>
             </div>
             <div className="relative">
-              <div className="rounded-md overflow-hidden shadow-2xl">
+              <div className="rounded-md overflow-hidden shadow-2xl hover-lift transition-all-smooth">
                 <img
                   src={lawyerDigitalImg}
                   alt="Nowoczesna kancelaria prawna"
                   className="w-full h-auto object-cover"
                 />
               </div>
-              <div className="absolute -bottom-4 -left-4 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-lg">
+              <div className="absolute -bottom-4 -left-4 glass-strong text-primary-foreground px-4 py-3 rounded-md shadow-lg animate-scale-in">
                 <div className="text-sm font-semibold">Zgodne z RODO</div>
                 <div className="text-xs opacity-80">Rozp. 2016/679</div>
               </div>
@@ -251,8 +251,8 @@ export default function Landing() {
       <section id="funkcje" className="py-20 px-4 border-t border-border" data-testid="section-features">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Funkcje systemu</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 animate-fade-in-up">Funkcje systemu</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto animate-fade-in-up" style={{animationDelay: "0.1s"}}>
               Kompletny zestaw narzedzi do profesjonalnego prowadzenia spraw prawnych
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="order-2 lg:order-1">
-              <div className="rounded-md overflow-hidden shadow-2xl">
+              <div className="rounded-md overflow-hidden shadow-2xl hover-lift transition-all-smooth">
                 <img
                   src={teamMeetingImg}
                   alt="Zespol prawnikow"
@@ -319,10 +319,10 @@ export default function Landing() {
               </div>
             </div>
             <div className="order-1 lg:order-2">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6 animate-fade-in-up">
                 Jak zaczac korzystac
                 <br />
-                <span className="text-primary">z LexVault?</span>
+                <span className="gradient-text">z LexVault?</span>
               </h2>
               <div className="space-y-6">
                 <StepItem
@@ -367,10 +367,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6 animate-fade-in-up">
                 Bezpieczenstwo
                 <br />
-                <span className="text-primary">na najwyzszym poziomie</span>
+                <span className="gradient-text">na najwyzszym poziomie</span>
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-8">
                 Dane Twoich klientow sa chronione zgodnie z najwyzszymi standardami bezpieczenstwa.
@@ -400,14 +400,14 @@ export default function Landing() {
               </div>
             </div>
             <div className="relative">
-              <div className="rounded-md overflow-hidden shadow-2xl">
+              <div className="rounded-md overflow-hidden shadow-2xl hover-lift transition-all-smooth">
                 <img
                   src={securityDataImg}
                   alt="Bezpieczenstwo danych"
                   className="w-full h-auto object-cover"
                 />
               </div>
-              <div className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-lg">
+              <div className="absolute -bottom-4 -right-4 glass-strong text-primary-foreground px-4 py-3 rounded-md shadow-lg animate-scale-in">
                 <div className="text-sm font-semibold">Tajemnica zawodowa</div>
                 <div className="text-xs opacity-80">Ustawa o ustroju sadow</div>
               </div>
@@ -418,8 +418,8 @@ export default function Landing() {
 
       <section className="py-20 px-4 border-t border-border" data-testid="section-cta">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Gotowy na nowoczesna <span className="text-primary">kancelarie?</span>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 animate-fade-in-up">
+            Gotowy na nowoczesna <span className="gradient-text">kancelarie?</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8 leading-relaxed">
             Dolacz do platformy LexVault i zacznij korzystac z pelni mozliwosci systemu
@@ -539,11 +539,11 @@ export default function Landing() {
 
 function StatItem({ icon, value, label, testId }: { icon: React.ReactNode; value: string; label: string; testId: string }) {
   return (
-    <div className="text-center" data-testid={testId}>
-      <div className="inline-flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary mb-3">
+    <div className="text-center transition-all-smooth hover-lift" data-testid={testId}>
+      <div className="inline-flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary mb-3 animate-scale-in">
         {icon}
       </div>
-      <div className="text-2xl font-bold text-primary mb-1">{value}</div>
+      <div className="text-2xl font-bold gradient-text mb-1">{value}</div>
       <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   );
@@ -565,9 +565,9 @@ function AboutPoint({ icon, title, desc }: { icon: React.ReactNode; title: strin
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <Card className="hover-elevate" data-testid={`card-feature-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+    <Card className="hover-lift transition-all-smooth glass" data-testid={`card-feature-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardContent className="p-6">
-        <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary mb-4">
+        <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary mb-4 animate-float">
           {icon}
         </div>
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
@@ -593,9 +593,9 @@ function StepItem({ step, title, description }: { step: number; title: string; d
 
 function SecurityCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <Card className="hover-elevate" data-testid={`card-security-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+    <Card className="hover-lift transition-all-smooth glass" data-testid={`card-security-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardContent className="p-4 flex gap-3">
-        <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-md bg-primary/10 text-primary">
+        <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-md bg-primary/10 text-primary animate-glow">
           {icon}
         </div>
         <div>
