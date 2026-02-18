@@ -132,6 +132,10 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if ((req.session as any)?.adminUserId) {
+    return next();
+  }
+
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {
