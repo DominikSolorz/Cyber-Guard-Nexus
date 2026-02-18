@@ -16,7 +16,7 @@ import {
   Shield, LogOut, FolderPlus, Upload, Search, Trash2, Edit3,
   Folder, FileText, Image, File as FileIcon, ChevronRight,
   MoreVertical, Eye, Home, MessageSquare, Users, Plus,
-  Scale, Briefcase, User, Building2
+  Scale, Briefcase, User, Building2, Settings, Calendar
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -40,6 +40,7 @@ export default function Dashboard() {
   }
   if (!user) { window.location.href = "/api/login"; return null; }
   if (!user.onboardingCompleted) { window.location.href = "/onboarding"; return null; }
+  if (!user.emailVerified) { window.location.href = "/verify-email"; return null; }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -52,6 +53,12 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setLocation("/chat")} data-testid="button-chat">
               <MessageSquare className="h-4 w-4 mr-1" /><span className="hidden md:inline">Czat AI</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/calendar")} data-testid="button-calendar">
+              <Calendar className="h-4 w-4 mr-1" /><span className="hidden md:inline">Kalendarz</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/profile")} data-testid="button-profile">
+              <Settings className="h-4 w-4 mr-1" /><span className="hidden md:inline">Profil</span>
             </Button>
             {user.isAdmin && (
               <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-admin">

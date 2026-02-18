@@ -1,10 +1,12 @@
-import { eq, and, ilike, desc, or } from "drizzle-orm";
+import { eq, and, ilike, desc, or, gte, lte } from "drizzle-orm";
 import { db } from "./db";
 import {
   users, folders, files, conversations, messages,
   clientRecords, cases, directMessages, messageAttachments,
+  emailVerifications, courtHearings,
   type User, type Folder, type File, type Conversation, type Message,
-  type ClientRecord, type Case, type DirectMessage, type MessageAttachment
+  type ClientRecord, type Case, type DirectMessage, type MessageAttachment,
+  type EmailVerification, type CourtHearing
 } from "@shared/schema";
 
 export interface IStorage {
@@ -57,6 +59,17 @@ export interface IStorage {
   deleteConversation(id: number, userId: string): Promise<void>;
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   createMessage(conversationId: number, role: string, content: string): Promise<Message>;
+
+  createEmailVerification(userId: string, email: string, code: string, expiresAt: Date): Promise<EmailVerification>;
+  getActiveVerification(userId: string): Promise<EmailVerification | undefined>;
+  markVerificationUsed(id: number): Promise<void>;
+
+  getHearingsByCase(caseId: number): Promise<CourtHearing[]>;
+  getHearingsByLawyer(lawyerId: string, startDate?: Date, endDate?: Date): Promise<CourtHearing[]>;
+  getHearingById(id: number): Promise<CourtHearing | undefined>;
+  createHearing(data: Omit<CourtHearing, "id" | "createdAt">): Promise<CourtHearing>;
+  updateHearing(id: number, lawyerId: string, data: Partial<CourtHearing>): Promise<CourtHearing | undefined>;
+  deleteHearing(id: number, lawyerId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -270,6 +283,57 @@ export class DatabaseStorage implements IStorage {
   async createMessage(conversationId: number, role: string, content: string): Promise<Message> {
     const [message] = await db.insert(messages).values({ conversationId, role, content }).returning();
     return message;
+  }
+
+  async createEmailVerification(userId: string, email: string, code: string, expiresAt: Date): Promise<EmailVerification> {
+    const [v] = await db.insert(emailVerifications).values({ userId, email, code, expiresAt }).returning();
+    return v;
+  }
+
+  async getActiveVerification(userId: string): Promise<EmailVerification | undefined> {
+    const [v] = await db.select().from(emailVerifications)
+      .where(and(
+        eq(emailVerifications.userId, userId),
+        gte(emailVerifications.expiresAt, new Date())
+      ))
+      .orderBy(desc(emailVerifications.createdAt))
+      .limit(1);
+    return v && !v.usedAt ? v : undefined;
+  }
+
+  async markVerificationUsed(id: number): Promise<void> {
+    await db.update(emailVerifications).set({ usedAt: new Date() }).where(eq(emailVerifications.id, id));
+  }
+
+  async getHearingsByCase(caseId: number): Promise<CourtHearing[]> {
+    return db.select().from(courtHearings).where(eq(courtHearings.caseId, caseId)).orderBy(courtHearings.startsAt);
+  }
+
+  async getHearingsByLawyer(lawyerId: string, startDate?: Date, endDate?: Date): Promise<CourtHearing[]> {
+    const conditions = [eq(courtHearings.lawyerId, lawyerId)];
+    if (startDate) conditions.push(gte(courtHearings.startsAt, startDate));
+    if (endDate) conditions.push(lte(courtHearings.startsAt, endDate));
+    return db.select().from(courtHearings).where(and(...conditions)).orderBy(courtHearings.startsAt);
+  }
+
+  async getHearingById(id: number): Promise<CourtHearing | undefined> {
+    const [h] = await db.select().from(courtHearings).where(eq(courtHearings.id, id));
+    return h;
+  }
+
+  async createHearing(data: Omit<CourtHearing, "id" | "createdAt">): Promise<CourtHearing> {
+    const [h] = await db.insert(courtHearings).values(data).returning();
+    return h;
+  }
+
+  async updateHearing(id: number, lawyerId: string, data: Partial<CourtHearing>): Promise<CourtHearing | undefined> {
+    const [h] = await db.update(courtHearings).set(data).where(and(eq(courtHearings.id, id), eq(courtHearings.lawyerId, lawyerId))).returning();
+    return h;
+  }
+
+  async deleteHearing(id: number, lawyerId: string): Promise<boolean> {
+    const result = await db.delete(courtHearings).where(and(eq(courtHearings.id, id), eq(courtHearings.lawyerId, lawyerId))).returning();
+    return result.length > 0;
   }
 }
 

@@ -9,6 +9,9 @@ import CaseDetail from "@/pages/case-detail";
 import Chat from "@/pages/chat";
 import Admin from "@/pages/admin";
 import Onboarding from "@/pages/onboarding";
+import VerifyEmail from "@/pages/verify-email";
+import ProfileSettings from "@/pages/profile-settings";
+import CalendarPage from "@/pages/calendar";
 import Contact from "@/pages/contact";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
@@ -23,6 +26,9 @@ function Router() {
       <Route path="/chat" component={Chat} />
       <Route path="/admin" component={Admin} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/profile" component={ProfileSettings} />
+      <Route path="/calendar" component={CalendarPage} />
       <Route path="/contact" component={Contact} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />

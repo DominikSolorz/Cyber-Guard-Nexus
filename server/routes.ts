@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replit_integrations/auth/replitAuth";
 import { authStorage } from "./replit_integrations/auth/storage";
-import { onboardingSchema } from "@shared/schema";
+import { onboardingSchema, profileUpdateSchema, validateNIP, validatePESEL } from "@shared/schema";
+import { sendVerificationEmail, generateVerificationCode } from "./email";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -89,35 +90,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const parsed = onboardingSchema.parse(req.body);
+
+      if (parsed.nip && !validateNIP(parsed.nip)) {
+        return res.status(400).json({ message: "Nieprawidlowy numer NIP" });
+      }
+      if (parsed.pesel && !validatePESEL(parsed.pesel)) {
+        return res.status(400).json({ message: "Nieprawidlowy numer PESEL" });
+      }
+
       const updateData: any = {
         role: parsed.role,
         firstName: parsed.firstName,
         lastName: parsed.lastName,
-        phone: parsed.phone || null,
+        email: parsed.email,
+        phone: parsed.phone,
+        street: parsed.street,
+        city: parsed.city,
+        postalCode: parsed.postalCode,
+        voivodeship: parsed.voivodeship,
+        country: parsed.country || "Polska",
         onboardingCompleted: true,
+        emailVerified: false,
       };
 
       if (parsed.role === "adwokat" || parsed.role === "radca_prawny") {
         updateData.barNumber = parsed.barNumber || null;
         updateData.lawyerType = parsed.role;
+        updateData.nip = parsed.nip || null;
       }
 
       if (parsed.role === "klient") {
         updateData.pesel = parsed.pesel || null;
         updateData.address = parsed.address || null;
-        updateData.city = parsed.city || null;
-        updateData.postalCode = parsed.postalCode || null;
       }
 
       if (parsed.role === "firma") {
         updateData.companyName = parsed.companyName || null;
         updateData.nip = parsed.nip || null;
+        updateData.pesel = parsed.pesel || null;
         updateData.address = parsed.address || null;
-        updateData.city = parsed.city || null;
-        updateData.postalCode = parsed.postalCode || null;
       }
 
       const user = await storage.updateUserProfile(userId, updateData);
+
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      await storage.createEmailVerification(userId, parsed.email, code, expiresAt);
+      await sendVerificationEmail(parsed.email, `${parsed.firstName} ${parsed.lastName}`, code);
+
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/verify-email", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { code } = req.body;
+      if (!code || typeof code !== "string") {
+        return res.status(400).json({ message: "Kod jest wymagany" });
+      }
+
+      const verification = await storage.getActiveVerification(userId);
+      if (!verification) {
+        return res.status(400).json({ message: "Kod wygasl lub nie istnieje. Wyslij ponownie." });
+      }
+
+      if (verification.code !== code.trim()) {
+        return res.status(400).json({ message: "Nieprawidlowy kod weryfikacyjny" });
+      }
+
+      await storage.markVerificationUsed(verification.id);
+      const user = await storage.updateUserProfile(userId, { emailVerified: true });
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/resend-verification", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = await storage.getUserById(userId);
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "Brak adresu email" });
+      }
+
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      await storage.createEmailVerification(userId, user.email, code, expiresAt);
+      const sent = await sendVerificationEmail(user.email, `${user.firstName || ""} ${user.lastName || ""}`, code);
+
+      if (!sent) {
+        return res.status(500).json({ message: "Blad wysylki emaila" });
+      }
+
+      res.json({ message: "Kod wyslany ponownie" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/profile", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(404).json({ message: "Uzytkownik nie znaleziony" });
+    res.json(user);
+  });
+
+  app.patch("/api/profile", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const parsed = profileUpdateSchema.parse(req.body);
+      const user = await storage.updateUserProfile(userId, parsed);
       res.json(user);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -676,6 +762,108 @@ Masz dostep do narzedzia web_search ktore pozwala Ci przeszukiwac internet w cel
     const deleted = await storage.deleteUser(req.params.id);
     if (!deleted) return res.status(404).json({ message: "Uzytkownik nie znaleziony" });
     res.json({ message: "Uzytkownik usuniety" });
+  });
+
+  app.get("/api/hearings", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(401).json({ message: "Nie zalogowany" });
+
+    const startDate = req.query.start ? new Date(req.query.start as string) : undefined;
+    const endDate = req.query.end ? new Date(req.query.end as string) : undefined;
+
+    if (isLawyerRole(user.role)) {
+      const hearings = await storage.getHearingsByLawyer(userId, startDate, endDate);
+      return res.json(hearings);
+    }
+
+    const myCases = await storage.getCasesByClient(userId);
+    const allHearings: any[] = [];
+    for (const c of myCases) {
+      const h = await storage.getHearingsByCase(c.id);
+      allHearings.push(...h);
+    }
+    if (startDate || endDate) {
+      const filtered = allHearings.filter(h => {
+        if (startDate && new Date(h.startsAt) < startDate) return false;
+        if (endDate && new Date(h.startsAt) > endDate) return false;
+        return true;
+      });
+      return res.json(filtered);
+    }
+    res.json(allHearings);
+  });
+
+  app.get("/api/cases/:caseId/hearings", isAuthenticated, async (req, res) => {
+    const caseId = parseInt(req.params.caseId);
+    const userId = getUserId(req);
+    const caseData = await storage.getCaseById(caseId);
+    if (!caseData) return res.status(404).json({ message: "Sprawa nie znaleziona" });
+
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(401).json({ message: "Nie zalogowany" });
+
+    if (isLawyerRole(user.role)) {
+      if (caseData.lawyerId !== userId) return res.status(403).json({ message: "Brak dostepu" });
+    } else {
+      const myCases = await storage.getCasesByClient(userId);
+      if (!myCases.some(c => c.id === caseId)) return res.status(403).json({ message: "Brak dostepu" });
+    }
+
+    const hearings = await storage.getHearingsByCase(caseId);
+    res.json(hearings);
+  });
+
+  app.post("/api/hearings", isAuthenticated, requireLawyer, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { caseId, title, description, courtName, courtRoom, startsAt, endsAt } = req.body;
+      if (!caseId || !title || !startsAt) {
+        return res.status(400).json({ message: "Sprawa, tytul i data sa wymagane" });
+      }
+
+      const c = await storage.getCaseById(caseId);
+      if (!c || c.lawyerId !== userId) {
+        return res.status(403).json({ message: "Brak dostepu do sprawy" });
+      }
+
+      const hearing = await storage.createHearing({
+        caseId,
+        lawyerId: userId,
+        title,
+        description: description || null,
+        courtName: courtName || null,
+        courtRoom: courtRoom || null,
+        startsAt: new Date(startsAt),
+        endsAt: endsAt ? new Date(endsAt) : null,
+      });
+      res.status(201).json(hearing);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/hearings/:id", isAuthenticated, requireLawyer, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const userId = getUserId(req);
+    const { title, description, courtName, courtRoom, startsAt, endsAt } = req.body;
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (courtName !== undefined) updateData.courtName = courtName;
+    if (courtRoom !== undefined) updateData.courtRoom = courtRoom;
+    if (startsAt !== undefined) updateData.startsAt = new Date(startsAt);
+    if (endsAt !== undefined) updateData.endsAt = endsAt ? new Date(endsAt) : null;
+    const hearing = await storage.updateHearing(id, userId, updateData);
+    if (!hearing) return res.status(404).json({ message: "Termin nie znaleziony" });
+    res.json(hearing);
+  });
+
+  app.delete("/api/hearings/:id", isAuthenticated, requireLawyer, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteHearing(id, getUserId(req));
+    if (!deleted) return res.status(404).json({ message: "Termin nie znaleziony" });
+    res.json({ message: "Termin usuniety" });
   });
 
   const httpServer = createServer(app);

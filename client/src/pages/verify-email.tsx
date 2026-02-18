@@ -1,0 +1,109 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Shield, Mail, RefreshCw } from "lucide-react";
+
+export default function VerifyEmail() {
+  const [code, setCode] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const verifyMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/verify-email", { code });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Email zweryfikowany" });
+      window.location.href = "/dashboard";
+    },
+    onError: (error: any) => {
+      toast({ title: "Blad", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/resend-verification");
+    },
+    onSuccess: () => {
+      toast({ title: "Kod wyslany ponownie", description: "Sprawdz skrzynke email" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Blad", description: error.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <Shield className="h-8 w-8 text-primary" />
+          <span className="text-2xl font-bold tracking-tight">
+            Lex<span className="text-primary">Vault</span>
+          </span>
+        </div>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
+                <Mail className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2" data-testid="text-verify-title">Weryfikacja email</h2>
+              <p className="text-sm text-muted-foreground">
+                Wyslalismy 6-cyfrowy kod weryfikacyjny na Twoj adres email. Wpisz go ponizej, aby potwierdzic konto.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="______"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-[0.5em] font-mono"
+                  data-testid="input-verification-code"
+                />
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={() => verifyMutation.mutate()}
+                disabled={code.length !== 6 || verifyMutation.isPending}
+                data-testid="button-verify"
+              >
+                {verifyMutation.isPending ? "Weryfikacja..." : "Zweryfikuj"}
+              </Button>
+
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-2">Nie otrzymales kodu?</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => resendMutation.mutate()}
+                  disabled={resendMutation.isPending}
+                  data-testid="button-resend"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  {resendMutation.isPending ? "Wysylanie..." : "Wyslij ponownie"}
+                </Button>
+              </div>
+
+              <div className="bg-muted/50 rounded-md p-3 mt-4">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Kod jest wazny przez 15 minut. Nigdy nie udostepniaj kodu innym osobom. Nikt z zespolu LexVault nie poprosi Cie o ten kod.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

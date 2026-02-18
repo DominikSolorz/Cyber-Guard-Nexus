@@ -22,17 +22,44 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false).notNull(),
   role: varchar("role"),
   onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
   phone: varchar("phone"),
   pesel: varchar("pesel"),
   address: text("address"),
+  street: varchar("street"),
   city: varchar("city"),
   postalCode: varchar("postal_code"),
+  voivodeship: varchar("voivodeship"),
+  country: varchar("country").default("Polska"),
   companyName: varchar("company_name"),
   nip: varchar("nip"),
   barNumber: varchar("bar_number"),
   lawyerType: varchar("lawyer_type"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const emailVerifications = pgTable("email_verifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  email: varchar("email").notNull(),
+  code: varchar("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const courtHearings = pgTable("court_hearings", {
+  id: serial("id").primaryKey(),
+  caseId: integer("case_id").notNull().references(() => cases.id, { onDelete: "cascade" }),
+  lawyerId: varchar("lawyer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  courtName: varchar("court_name"),
+  courtRoom: varchar("court_room"),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const clientRecords = pgTable("client_records", {
@@ -128,20 +155,84 @@ export const insertClientRecordSchema = createInsertSchema(clientRecords).omit({
 export const insertCaseSchema = createInsertSchema(cases).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({ id: true, createdAt: true, editedAt: true });
 export const insertMessageAttachmentSchema = createInsertSchema(messageAttachments).omit({ id: true, createdAt: true });
+export const insertCourtHearingSchema = createInsertSchema(courtHearings).omit({ id: true, createdAt: true });
+
+export function validateNIP(nip: string): boolean {
+  const cleaned = nip.replace(/[\s-]/g, "");
+  if (!/^\d{10}$/.test(cleaned)) return false;
+  const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cleaned[i]) * weights[i];
+  }
+  return sum % 11 === parseInt(cleaned[9]);
+}
+
+export function validatePESEL(pesel: string): boolean {
+  if (!/^\d{11}$/.test(pesel)) return false;
+  const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
+  let sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(pesel[i]) * weights[i];
+  }
+  const control = (10 - (sum % 10)) % 10;
+  return control === parseInt(pesel[10]);
+}
+
+export const VOIVODESHIPS = [
+  "dolnoslaskie", "kujawsko-pomorskie", "lubelskie", "lubuskie",
+  "lodzkie", "malopolskie", "mazowieckie", "opolskie",
+  "podkarpackie", "podlaskie", "pomorskie", "slaskie",
+  "swietokrzyskie", "warminsko-mazurskie", "wielkopolskie", "zachodniopomorskie",
+] as const;
+
+export const VOIVODESHIP_LABELS: Record<string, string> = {
+  "dolnoslaskie": "Dolnoslaskie",
+  "kujawsko-pomorskie": "Kujawsko-pomorskie",
+  "lubelskie": "Lubelskie",
+  "lubuskie": "Lubuskie",
+  "lodzkie": "Lodzkie",
+  "malopolskie": "Malopolskie",
+  "mazowieckie": "Mazowieckie",
+  "opolskie": "Opolskie",
+  "podkarpackie": "Podkarpackie",
+  "podlaskie": "Podlaskie",
+  "pomorskie": "Pomorskie",
+  "slaskie": "Slaskie",
+  "swietokrzyskie": "Swietokrzyskie",
+  "warminsko-mazurskie": "Warminsko-mazurskie",
+  "wielkopolskie": "Wielkopolskie",
+  "zachodniopomorskie": "Zachodniopomorskie",
+};
 
 export const onboardingSchema = z.object({
   role: z.enum(["adwokat", "radca_prawny", "klient", "firma"]),
   firstName: z.string().min(2),
   lastName: z.string().min(2),
-  phone: z.string().optional(),
+  email: z.string().email(),
+  phone: z.string().min(9),
+  street: z.string().min(3),
+  city: z.string().min(2),
+  postalCode: z.string().regex(/^\d{2}-\d{3}$/, "Format: XX-XXX"),
+  voivodeship: z.string().min(1),
+  country: z.string().default("Polska"),
   pesel: z.string().optional(),
   address: z.string().optional(),
-  city: z.string().optional(),
-  postalCode: z.string().optional(),
   companyName: z.string().optional(),
   nip: z.string().optional(),
   barNumber: z.string().optional(),
   lawyerType: z.enum(["adwokat", "radca_prawny"]).optional(),
+});
+
+export const profileUpdateSchema = z.object({
+  firstName: z.string().min(2).optional(),
+  lastName: z.string().min(2).optional(),
+  phone: z.string().min(9).optional(),
+  street: z.string().min(3).optional(),
+  city: z.string().min(2).optional(),
+  postalCode: z.string().regex(/^\d{2}-\d{3}$/, "Format: XX-XXX").optional(),
+  voivodeship: z.string().optional(),
+  country: z.string().optional(),
 });
 
 export type UpsertUser = typeof users.$inferInsert;
@@ -162,3 +253,6 @@ export type DirectMessage = typeof directMessages.$inferSelect;
 export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
 export type MessageAttachment = typeof messageAttachments.$inferSelect;
 export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSchema>;
+export type CourtHearing = typeof courtHearings.$inferSelect;
+export type InsertCourtHearing = z.infer<typeof insertCourtHearingSchema>;
+export type EmailVerification = typeof emailVerifications.$inferSelect;
