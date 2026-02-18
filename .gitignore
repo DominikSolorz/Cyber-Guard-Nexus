@@ -9,3 +9,17 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+
+# Projekty użytkownika (zachowaj lokalnie)
+projects/*/
+!projects/.gitkeep
+
+# Node modules
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+*.log

@@ -1,40 +1,78 @@
 # Cyber Guard Nexus
 
-Biblioteki i klucze API do pracy z:
-- **OpenAI Chat GPT**
-- **Backend (FastAPI, Flask)**
-- **Google APIs (Gmail)**
-- **IO.NET (AI + eCloud)**
+Kompletna przestrzeń developerska z kluczami API i narzędziami do szybkiego wdrażania aplikacji.
 
-## Instalacja
+## 🚀 Szybki start
 
+### 1. Sklonuj i skonfiguruj
 ```bash
-# Sklonuj repozytorium
 git clone https://github.com/DominikSolorz/Cyber-Guard-Nexus.git
 cd Cyber-Guard-Nexus
 
-# Skopiuj i skonfiguruj klucze
+# Skonfiguruj klucze API
 cp .env.example .env
-nano .env  # wpisz swoje prawdziwe klucze
+nano .env  # wpisz swoje klucze
+```
 
-# Zainstaluj biblioteki
+### 2. Zainstaluj biblioteki Python  
+```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Biblioteki
+### 3. Utwórz i wdróż projekt
+```bash
+# Nowy projekt z template
+./new-project.sh moja-strona html
 
-- openai - Chat GPT
-- fastapi, uvicorn - Backend API
-- flask - Backend alternatywny  
+# LUB wrzuć własne pliki do projects/
+mkdir -p projects/web/moj-projekt
+# ... skopiuj pliki
+
+# Uruchom
+./deploy.sh projects/web/moj-projekt
+```
+
+Szczegóły: [QUICK_START.md](QUICK_START.md)
+
+## 📦 Co zawiera
+
+**Klucze API:**
+- OpenAI Chat GPT (2 klucze)
+- Gmail App Password
+- IO.NET AI + eCloud
+
+**Biblioteki Python:**
+- openai, fastapi, flask - Backend & AI
 - requests, httpx - HTTP clients
 - beautifulsoup4 - Web scraping
 - google-api-python-client - Google APIs
-- sqlalchemy - Database ORM
 
-## Bezpieczeństwo
+**Narzędzia deployment:**
+- `deploy.sh` - Automatyczne uruchamianie projektów
+- `new-project.sh` - Tworzenie z templateów
+- Templaty: HTML, React, FastAPI
 
-✅ `.gitignore` chroni klucze  
+## 📁 Struktura
+
+```
+├── .env              # Klucze API (chronione)
+├── KLUCZE_API.txt    # Backup kluczy (chroniony)
+├── deploy.sh         # Skrypt wdrożeniowy
+├── new-project.sh    # Tworzenie projektów
+├── projects/         # Twoje projekty
+│   ├── web/          # Strony HTML
+│   ├── backend/      # API Python/Node.js
+│   └── frontend/     # React, Vue
+└── templates/        # Szablony startowe
+    ├── html/         # Template HTML
+    ├── python/       # Template FastAPI
+    └── react/        # Template React
+```
+
+## 🛡️ Bezpieczeństwo
+
+✅ `.gitignore` chroni klucze i projekty  
 ✅ GitHub Push Protection aktywna  
-✅ W repo tylko szablony
+✅ W repo tylko szablony i narzędzia
