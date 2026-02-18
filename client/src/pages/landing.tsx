@@ -1,8 +1,11 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, FolderOpen, Search, Lock, FileText, ArrowRight } from "lucide-react";
+import { Shield, FolderOpen, Search, Lock, FileText, ArrowRight, MessageSquare, Mail } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Landing() {
+  const { user, isLoading } = useAuth();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -23,12 +26,18 @@ export default function Landing() {
               <Link href="/privacy">
                 <Button variant="ghost" size="sm" data-testid="link-privacy">RODO</Button>
               </Link>
-              <Link href="/login">
-                <Button variant="outline" size="sm" data-testid="link-login">Logowanie</Button>
+              <Link href="/contact">
+                <Button variant="ghost" size="sm" data-testid="link-contact">Kontakt</Button>
               </Link>
-              <Link href="/register">
-                <Button size="sm" data-testid="link-register">Rejestracja</Button>
-              </Link>
+              {user ? (
+                <Link href="/dashboard">
+                  <Button size="sm" data-testid="link-dashboard">Panel</Button>
+                </Link>
+              ) : (
+                <a href="/api/login">
+                  <Button size="sm" data-testid="link-login">Zaloguj sie</Button>
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -37,7 +46,7 @@ export default function Landing() {
       <section className="relative pt-32 pb-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/30 bg-primary/5 text-primary text-sm mb-6">
             <Lock className="h-3.5 w-3.5" />
             <span>Bezpieczna biblioteka spraw sadowych</span>
           </div>
@@ -51,17 +60,21 @@ export default function Landing() {
             Organizuj, przechowuj i przeszukuj swoje akta z pelnym bezpieczenstwem.
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link href="/register">
-              <Button size="lg" data-testid="button-hero-register">
-                Rozpocznij za darmo
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline" size="lg" data-testid="button-hero-login">
-                Zaloguj sie
-              </Button>
-            </Link>
+            {user ? (
+              <Link href="/dashboard">
+                <Button size="lg" data-testid="button-hero-dashboard">
+                  Przejdz do panelu
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            ) : (
+              <a href="/api/login">
+                <Button size="lg" data-testid="button-hero-login">
+                  Rozpocznij za darmo
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -93,17 +106,17 @@ export default function Landing() {
             <FeatureCard
               icon={<Lock className="h-6 w-6" />}
               title="Bezpieczenstwo"
-              description="Szyfrowanie hasel, sesje uzytkownikow i ochrona danych zgodna z RODO."
+              description="Logowanie przez Google, GitHub, Apple lub email. Ochrona danych zgodna z RODO."
+            />
+            <FeatureCard
+              icon={<MessageSquare className="h-6 w-6" />}
+              title="Asystent AI"
+              description="Wbudowany czat z ChatGPT. Pomoc w analizie dokumentow i sprawach prawnych."
             />
             <FeatureCard
               icon={<Shield className="h-6 w-6" />}
               title="Prywatnosc"
               description="Kazdy uzytkownik widzi wylacznie swoje dokumenty. Pelna izolacja danych."
-            />
-            <FeatureCard
-              icon={<ArrowRight className="h-6 w-6" />}
-              title="Przyszlosc"
-              description="Przygotowane pod integracje z AI, logowanie Google i generowanie PDF."
             />
           </div>
         </div>
@@ -124,6 +137,9 @@ export default function Landing() {
             </Link>
             <Link href="/privacy">
               <span className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors" data-testid="link-footer-privacy">Polityka prywatnosci</span>
+            </Link>
+            <Link href="/contact">
+              <span className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors" data-testid="link-footer-contact">Kontakt</span>
             </Link>
           </div>
         </div>

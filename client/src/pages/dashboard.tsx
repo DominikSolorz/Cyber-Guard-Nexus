@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest, getQueryFn } from "@/lib/queryClient";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Shield, LogOut, FolderPlus, Upload, Search, Trash2, Edit3,
   Folder, FileText, Image, File as FileIcon, ChevronRight,
-  MoreVertical, X, Eye, Home
+  MoreVertical, Eye, Home, MessageSquare, Users, Mail
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -20,7 +20,7 @@ import {
 import type { Folder as FolderType, File as FileType } from "@shared/schema";
 
 export default function Dashboard() {
-  const { user, logout, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,6 +37,7 @@ export default function Dashboard() {
   const { data: folders = [], isLoading: foldersLoading } = useQuery<FolderType[]>({
     queryKey: ["/api/folders"],
     queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!user,
   });
 
   const { data: files = [], isLoading: filesLoading } = useQuery<FileType[]>({
@@ -47,6 +48,7 @@ export default function Dashboard() {
       if (!res.ok) throw new Error("Failed to fetch files");
       return res.json();
     },
+    enabled: !!user,
   });
 
   const { data: searchResults } = useQuery<{ folders: FolderType[]; files: FileType[] }>({
@@ -57,7 +59,7 @@ export default function Dashboard() {
       if (!res.ok) throw new Error("Search failed");
       return res.json();
     },
-    enabled: searchQuery.trim().length > 0,
+    enabled: searchQuery.trim().length > 0 && !!user,
   });
 
   const createFolderMutation = useMutation({
@@ -144,9 +146,8 @@ export default function Dashboard() {
     },
   });
 
-  const handleLogout = async () => {
-    await logout();
-    setLocation("/");
+  const handleLogout = () => {
+    logout();
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +186,7 @@ export default function Dashboard() {
   }
 
   if (!user) {
-    setLocation("/login");
+    window.location.href = "/api/login";
     return null;
   }
 
@@ -217,6 +218,16 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/chat")} data-testid="button-chat">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              <span className="hidden md:inline">Czat AI</span>
+            </Button>
+            {user.isAdmin && (
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-admin">
+                <Users className="h-4 w-4 mr-1" />
+                <span className="hidden md:inline">Admin</span>
+              </Button>
+            )}
             <span className="text-sm text-muted-foreground hidden md:inline" data-testid="text-username">
               {user.firstName} {user.lastName}
             </span>
