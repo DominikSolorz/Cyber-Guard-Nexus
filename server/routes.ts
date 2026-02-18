@@ -82,7 +82,10 @@ function isLawyerRole(role: string | null): boolean {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  await setupAuth(app);
+  // Setup Replit auth only if running on Replit
+  if (process.env.REPL_ID) {
+    await setupAuth(app);
+  }
 
   app.get("/api/auth/user", async (req: Request, res: Response) => {
     if ((req.session as any)?.adminUserId) {
