@@ -355,7 +355,7 @@ export default function Landing() {
               </div>
               <div className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-lg">
                 <div className="text-sm font-semibold">Tajemnica zawodowa</div>
-                <div className="text-xs opacity-80">Art. 6 Prawa o adwokaturze</div>
+                <div className="text-xs opacity-80">Ustawa o ustroju sadow</div>
               </div>
             </div>
           </div>

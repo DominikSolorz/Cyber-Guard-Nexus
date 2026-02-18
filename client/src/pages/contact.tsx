@@ -96,6 +96,17 @@ export default function Contact() {
             <Shield className="h-5 w-5 text-primary" />
             <span className="font-semibold">LexVault</span>
           </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link href="/terms">
+              <span className="text-sm text-muted-foreground cursor-pointer transition-colors" data-testid="link-footer-terms">Regulamin</span>
+            </Link>
+            <Link href="/privacy">
+              <span className="text-sm text-muted-foreground cursor-pointer transition-colors" data-testid="link-footer-privacy">Polityka prywatnosci</span>
+            </Link>
+            <Link href="/confidentiality">
+              <span className="text-sm text-muted-foreground cursor-pointer transition-colors" data-testid="link-footer-confidentiality">Klauzula poufnosci</span>
+            </Link>
+          </div>
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Dominik Solarz. Wszelkie prawa zastrzezone.
           </p>
