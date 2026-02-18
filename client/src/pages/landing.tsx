@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,8 @@ import {
   Sparkles,
   Globe,
   Clock,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -30,51 +33,102 @@ import securityDataImg from "@assets/security-data.jpg";
 
 export default function Landing() {
   const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4 flex-wrap">
-            <Link href="/">
-              <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
-                <Shield className="h-7 w-7 text-primary" />
-                <span className="text-xl font-bold tracking-tight">
-                  Lex<span className="text-primary">Vault</span>
-                </span>
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/">
+                <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
+                  <Shield className="h-7 w-7 text-primary" />
+                  <span className="text-xl font-bold tracking-tight">
+                    Lex<span className="text-primary">Vault</span>
+                  </span>
+                </div>
+              </Link>
+              <div className="hidden md:flex items-center gap-1">
+                <a href="#o-platformie">
+                  <Button variant="ghost" size="sm" data-testid="link-about">O platformie</Button>
+                </a>
+                <a href="#funkcje">
+                  <Button variant="ghost" size="sm" data-testid="link-features">Funkcje</Button>
+                </a>
+                <a href="#bezpieczenstwo">
+                  <Button variant="ghost" size="sm" data-testid="link-security">Bezpieczenstwo</Button>
+                </a>
+                <Link href="/contact">
+                  <Button variant="ghost" size="sm" data-testid="link-contact">Kontakt</Button>
+                </Link>
               </div>
-            </Link>
-            <div className="flex items-center gap-1 flex-wrap">
-              <a href="#o-platformie">
-                <Button variant="ghost" size="sm" data-testid="link-about">O platformie</Button>
-              </a>
-              <a href="#funkcje">
-                <Button variant="ghost" size="sm" data-testid="link-features">Funkcje</Button>
-              </a>
-              <a href="#bezpieczenstwo">
-                <Button variant="ghost" size="sm" data-testid="link-security">Bezpieczenstwo</Button>
-              </a>
-              <Link href="/privacy">
-                <Button variant="ghost" size="sm" data-testid="link-privacy">Polityka prywatnosci</Button>
-              </Link>
-              <Link href="/terms">
-                <Button variant="ghost" size="sm" data-testid="link-terms">Regulamin</Button>
-              </Link>
-              <Link href="/contact">
-                <Button variant="ghost" size="sm" data-testid="link-contact">Kontakt</Button>
-              </Link>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2">
               {user ? (
                 <Link href="/dashboard">
                   <Button size="sm" data-testid="link-dashboard">Panel</Button>
                 </Link>
               ) : (
-                <a href="/api/login">
-                  <Button size="sm" data-testid="link-login">Zaloguj sie</Button>
-                </a>
+                <>
+                  <a href="/api/login">
+                    <Button variant="ghost" size="sm" data-testid="link-login">Zaloguj sie</Button>
+                  </a>
+                  <a href="/api/login">
+                    <Button size="sm" data-testid="link-register">Rejestracja</Button>
+                  </a>
+                </>
               )}
+            </div>
+
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                data-testid="button-mobile-menu"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
             </div>
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md">
+            <div className="px-4 py-3 space-y-1">
+              <a href="#o-platformie" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="link-mobile-about">O platformie</Button>
+              </a>
+              <a href="#funkcje" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="link-mobile-features">Funkcje</Button>
+              </a>
+              <a href="#bezpieczenstwo" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="link-mobile-security">Bezpieczenstwo</Button>
+              </a>
+              <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full justify-start" data-testid="link-mobile-contact">Kontakt</Button>
+              </Link>
+              <div className="border-t border-border pt-2 mt-2 flex flex-col gap-1">
+                {user ? (
+                  <Link href="/dashboard">
+                    <Button size="sm" className="w-full" data-testid="link-mobile-dashboard">Panel</Button>
+                  </Link>
+                ) : (
+                  <>
+                    <a href="/api/login">
+                      <Button variant="ghost" size="sm" className="w-full" data-testid="link-mobile-login">Zaloguj sie</Button>
+                    </a>
+                    <a href="/api/login">
+                      <Button size="sm" className="w-full" data-testid="link-mobile-register">Rejestracja</Button>
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       <section className="relative pt-16 min-h-[600px] flex items-center overflow-hidden" data-testid="section-hero">
@@ -336,7 +390,7 @@ export default function Landing() {
                 <SecurityCard
                   icon={<CheckCircle className="h-5 w-5" />}
                   title="Kontrola dostepu"
-                  desc="Wielopoziomowy system ról i uprawnien."
+                  desc="Wielopoziomowy system rol i uprawnien."
                 />
                 <SecurityCard
                   icon={<Database className="h-5 w-5" />}
@@ -416,6 +470,9 @@ export default function Landing() {
                 <a href="#o-platformie" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-about">O platformie</a>
                 <a href="#funkcje" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-features">Funkcje</a>
                 <a href="#bezpieczenstwo" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-security">Bezpieczenstwo</a>
+                <Link href="/contact">
+                  <span className="text-sm text-muted-foreground cursor-pointer transition-colors" data-testid="link-footer-contact">Kontakt</span>
+                </Link>
               </div>
             </div>
             <div>
@@ -452,7 +509,7 @@ export default function Landing() {
                 <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
                   <Phone className="h-4 w-4 flex-shrink-0 text-primary" />
                   <Link href="/contact">
-                    <span className="cursor-pointer transition-colors" data-testid="link-footer-contact">Strona kontaktowa</span>
+                    <span className="cursor-pointer transition-colors" data-testid="link-footer-contact-page">Strona kontaktowa</span>
                   </Link>
                 </div>
               </div>
@@ -471,9 +528,6 @@ export default function Landing() {
               </Link>
               <Link href="/confidentiality">
                 <span className="text-sm text-muted-foreground cursor-pointer transition-colors" data-testid="link-bottom-confidentiality">Klauzula poufnosci</span>
-              </Link>
-              <Link href="/contact">
-                <span className="text-sm text-muted-foreground cursor-pointer transition-colors" data-testid="link-bottom-contact">Kontakt</span>
               </Link>
             </div>
           </div>
