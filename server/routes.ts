@@ -10,6 +10,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import OpenAI from "openai";
+import bcrypt from "bcryptjs";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -79,12 +80,44 @@ function isLawyerRole(role: string | null): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
-  app.get("/api/auth/user", isAuthenticated, async (req: Request, res: Response) => {
+  app.get("/api/auth/user", async (req: Request, res: Response) => {
+    if ((req.session as any)?.adminUserId) {
+      const user = await storage.getUserById((req.session as any).adminUserId);
+      if (user) return res.json(user);
+    }
     const userId = getUserId(req);
-    if (!userId) return res.status(401).json({ message: "Nie zalogowany" });
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const user = await authStorage.getUser(userId);
     if (!user) return res.status(401).json({ message: "Uzytkownik nie znaleziony" });
     res.json(user);
+  });
+
+  app.post("/api/admin-login", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Podaj email i haslo" });
+      }
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ message: "Nieprawidlowy email lub haslo" });
+      }
+      const valid = await bcrypt.compare(password, user.passwordHash);
+      if (!valid) {
+        return res.status(401).json({ message: "Nieprawidlowy email lub haslo" });
+      }
+      (req.session as any).adminUserId = user.id;
+      res.json({ message: "Zalogowano pomyslnie", user: { ...user, passwordHash: undefined } });
+    } catch (error) {
+      console.error("[Admin Login] Error:", error);
+      res.status(500).json({ message: "Blad serwera" });
+    }
+  });
+
+  app.post("/api/admin-logout", async (req: Request, res: Response) => {
+    (req.session as any).adminUserId = undefined;
+    req.session.destroy(() => {});
+    res.json({ message: "Wylogowano" });
   });
 
   const DISPOSABLE_DOMAINS = new Set([

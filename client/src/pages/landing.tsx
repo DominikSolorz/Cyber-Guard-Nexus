@@ -72,12 +72,12 @@ export default function Landing() {
                 </Link>
               ) : (
                 <>
-                  <a href="/api/login">
+                  <Link href="/login">
                     <Button variant="ghost" size="sm" data-testid="link-login">Zaloguj sie</Button>
-                  </a>
-                  <a href="/api/login">
+                  </Link>
+                  <Link href="/login">
                     <Button size="sm" data-testid="link-register">Rejestracja</Button>
-                  </a>
+                  </Link>
                 </>
               )}
             </div>
@@ -117,12 +117,12 @@ export default function Landing() {
                   </Link>
                 ) : (
                   <>
-                    <a href="/api/login">
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" size="sm" className="w-full" data-testid="link-mobile-login">Zaloguj sie</Button>
-                    </a>
-                    <a href="/api/login">
+                    </Link>
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" className="w-full" data-testid="link-mobile-register">Rejestracja</Button>
-                    </a>
+                    </Link>
                   </>
                 )}
               </div>
@@ -165,12 +165,12 @@ export default function Landing() {
                 </Link>
               ) : (
                 <>
-                  <a href="/api/login">
+                  <Link href="/login">
                     <Button size="lg" data-testid="button-hero-login">
                       Rozpocznij za darmo
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  </a>
+                  </Link>
                   <a href="#o-platformie">
                     <Button variant="outline" size="lg" className="backdrop-blur-sm bg-white/5" data-testid="button-hero-learn">
                       Dowiedz sie wiecej

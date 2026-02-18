@@ -18,6 +18,9 @@ async function fetchUser(): Promise<User | null> {
 }
 
 async function logout(): Promise<void> {
+  try {
+    await fetch("/api/admin-logout", { method: "POST", credentials: "include" });
+  } catch {}
   window.location.href = "/api/logout";
 }
 
