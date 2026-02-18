@@ -41,7 +41,7 @@ export default function Dashboard() {
   }
   if (!user) { window.location.href = "/api/login"; return null; }
   if (!user.onboardingCompleted) { window.location.href = "/onboarding"; return null; }
-  if (!user.emailVerified) { window.location.href = "/verify-email"; return null; }
+  // if (!user.emailVerified) { window.location.href = "/verify-email"; return null; }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
