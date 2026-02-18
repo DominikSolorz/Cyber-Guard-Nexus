@@ -5,6 +5,10 @@ let connectionSettings: any;
 
 async function getCredentials() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  console.log(`[Email] REPLIT_CONNECTORS_HOSTNAME: ${hostname ? 'set' : 'NOT SET'}`);
+  console.log(`[Email] REPL_IDENTITY: ${process.env.REPL_IDENTITY ? 'set' : 'NOT SET'}`);
+  console.log(`[Email] WEB_REPL_RENEWAL: ${process.env.WEB_REPL_RENEWAL ? 'set' : 'NOT SET'}`);
+
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
     : process.env.WEB_REPL_RENEWAL
@@ -12,22 +16,35 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
+    console.error('[Email] No authentication token available (REPL_IDENTITY or WEB_REPL_RENEWAL)');
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
   }
 
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=sendgrid',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+  const url = 'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=sendgrid';
+  console.log(`[Email] Fetching SendGrid credentials from connector...`);
 
-  if (!connectionSettings || (!connectionSettings.settings.api_key || !connectionSettings.settings.from_email)) {
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/json',
+      'X_REPLIT_TOKEN': xReplitToken
+    }
+  });
+
+  const data = await response.json();
+  console.log(`[Email] Connector response status: ${response.status}, items count: ${data.items?.length || 0}`);
+
+  connectionSettings = data.items?.[0];
+
+  if (!connectionSettings || (!connectionSettings.settings?.api_key || !connectionSettings.settings?.from_email)) {
+    console.error('[Email] SendGrid connector missing settings:', JSON.stringify({
+      hasConnectionSettings: !!connectionSettings,
+      hasApiKey: !!connectionSettings?.settings?.api_key,
+      hasFromEmail: !!connectionSettings?.settings?.from_email,
+    }));
     throw new Error('SendGrid not connected');
   }
+
+  console.log(`[Email] SendGrid credentials loaded, from: ${connectionSettings.settings.from_email}`);
   return { apiKey: connectionSettings.settings.api_key, email: connectionSettings.settings.from_email };
 }
 
