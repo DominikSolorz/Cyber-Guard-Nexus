@@ -2,6 +2,8 @@ import { users, type User, type UpsertUser } from "@shared/schema";
 import { db } from "../../db";
 import { eq } from "drizzle-orm";
 
+const ADMIN_EMAIL = "goldservicepoland@gmail.com";
+
 export interface IAuthStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -14,9 +16,13 @@ class AuthStorage implements IAuthStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    const isAdminEmail = userData.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values({
+        ...userData,
+        isAdmin: isAdminEmail,
+      })
       .onConflictDoUpdate({
         target: users.id,
         set: {
@@ -24,6 +30,7 @@ class AuthStorage implements IAuthStorage {
           firstName: userData.firstName,
           lastName: userData.lastName,
           profileImageUrl: userData.profileImageUrl,
+          isAdmin: isAdminEmail,
           updatedAt: new Date(),
         },
       })

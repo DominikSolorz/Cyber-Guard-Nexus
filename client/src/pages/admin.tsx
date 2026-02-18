@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
-  Shield, ArrowLeft, Users, Trash2, ShieldCheck, ShieldOff
+  Shield, ArrowLeft, Users, Trash2, ShieldOff, Eye, Mail, Phone, MapPin
 } from "lucide-react";
 import type { User } from "@shared/schema";
 import {
@@ -31,19 +31,6 @@ export default function Admin() {
       return res.json();
     },
     enabled: !!user,
-  });
-
-  const toggleAdminMutation = useMutation({
-    mutationFn: async ({ id, isAdmin }: { id: string; isAdmin: boolean }) => {
-      await apiRequest("PATCH", `/api/admin/users/${id}`, { isAdmin });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ title: "Uprawnienia zaktualizowane" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Blad", description: error.message, variant: "destructive" });
-    },
   });
 
   const deleteUserMutation = useMutation({
@@ -146,27 +133,22 @@ export default function Admin() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {u.role && (
+                      <Badge variant="secondary">
+                        {u.role === "adwokat" ? "Adwokat" : u.role === "radca_prawny" ? "Radca prawny" : u.role === "firma" ? "Firma" : "Klient"}
+                      </Badge>
+                    )}
                     {u.isAdmin && <Badge variant="default">Admin</Badge>}
+                    {u.emailVerified && <Badge variant="outline">Email zweryfikowany</Badge>}
                     {u.id !== user.id && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleAdminMutation.mutate({ id: u.id, isAdmin: !u.isAdmin })}
-                          disabled={toggleAdminMutation.isPending}
-                          data-testid={`button-toggle-admin-${u.id}`}
-                        >
-                          {u.isAdmin ? <ShieldOff className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteUserId(u.id)}
-                          data-testid={`button-delete-user-${u.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteUserId(u.id)}
+                        data-testid={`button-delete-user-${u.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     )}
                   </div>
                 </CardContent>

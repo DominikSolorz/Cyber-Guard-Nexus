@@ -84,6 +84,7 @@ export const cases = pgTable("cases", {
   clientRecordId: integer("client_record_id").references(() => clientRecords.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   caseNumber: varchar("case_number"),
+  category: varchar("category"),
   description: text("description"),
   status: varchar("status").default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -178,6 +179,64 @@ export function validatePESEL(pesel: string): boolean {
   const control = (10 - (sum % 10)) % 10;
   return control === parseInt(pesel[10]);
 }
+
+export const CASE_CATEGORIES = [
+  "cywilne", "rodzinne", "karne", "pracy", "ubezpieczen_spolecznych",
+  "gospodarcze", "wieczystoksiegowe", "upadlosciowe", "administracyjne",
+] as const;
+
+export const CASE_CATEGORY_LABELS: Record<string, string> = {
+  "cywilne": "Sprawy cywilne",
+  "rodzinne": "Sprawy rodzinne i nieletnich",
+  "karne": "Sprawy karne",
+  "pracy": "Prawo pracy",
+  "ubezpieczen_spolecznych": "Prawo ubezpieczen spolecznych",
+  "gospodarcze": "Sprawy gospodarcze",
+  "wieczystoksiegowe": "Sprawy wieczystoksiegowe",
+  "upadlosciowe": "Sprawy upadlosciowe i restrukturyzacyjne",
+  "administracyjne": "Sprawy administracyjne",
+};
+
+export const CASE_CATEGORY_DESCRIPTIONS: Record<string, string[]> = {
+  "cywilne": [
+    "Zaplata dlugu", "Odszkodowanie", "Naruszenie dobr osobistych", "Sprawy o wlasnosc",
+    "Zasiedzenie", "Podzial majatku", "Zniesienie wspolwlasnosci", "Sprawy spadkowe",
+    "Umowy (niewaznosc, rozwiazanie, wykonanie)", "Eksmisja", "Ochrona konsumenta",
+    "Postepowanie nieprocesowe",
+  ],
+  "rodzinne": [
+    "Rozwod", "Separacja", "Alimenty", "Ustalenie ojcostwa",
+    "Wladza rodzicielska", "Kontakty z dzieckiem", "Przysposobienie (adopcja)",
+    "Ograniczenie/pozbawienie wladzy rodzicielskiej", "Demoralizacja nieletnich",
+    "Czyny karalne nieletnich",
+  ],
+  "karne": [
+    "Kradziez", "Oszustwo", "Pobicie", "Rozboj", "Narkotyki",
+    "Przestepstwa gospodarcze", "Przestepstwa seksualne", "Zabojstwo",
+    "Przestepstwa skarbowe", "Wykroczenia",
+  ],
+  "pracy": [
+    "Bezprawne zwolnienie", "Przywrocenie do pracy", "Wynagrodzenie",
+    "Mobbing", "Odszkodowanie", "Wypadki przy pracy", "Dyskryminacja",
+  ],
+  "ubezpieczen_spolecznych": [
+    "Odwolania od decyzji ZUS", "Emerytury", "Renty", "Swiadczenia",
+  ],
+  "gospodarcze": [
+    "Spory miedzy firmami", "Niewykonanie umowy", "Kary umowne",
+    "Odpowiedzialnosc zarzadu",
+  ],
+  "wieczystoksiegowe": [
+    "Wpisy do ksiag wieczystych", "Spory dotyczace nieruchomosci",
+  ],
+  "upadlosciowe": [
+    "Upadlosc konsumencka", "Upadlosc firm", "Restrukturyzacja przedsiebiorstw",
+  ],
+  "administracyjne": [
+    "Decyzje podatkowe", "Pozwolenia budowlane", "Koncesje", "Decyzje administracyjne",
+    "Odwolania do WSA/NSA",
+  ],
+};
 
 export const VOIVODESHIPS = [
   "dolnoslaskie", "kujawsko-pomorskie", "lubelskie", "lubuskie",

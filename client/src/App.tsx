@@ -15,6 +15,7 @@ import CalendarPage from "@/pages/calendar";
 import Contact from "@/pages/contact";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
+import Confidentiality from "@/pages/confidentiality";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/confidentiality" component={Confidentiality} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,14 +1,14 @@
 # LexVault - Legal Practice Management Platform
 
 ## Overview
-LexVault is a professional legal practice management platform for lawyers (adwokaci, radcy prawni) and their clients (individual, company). Features role-based access, case management, real-time lawyer-client messaging with PDF attachments, document management, AI legal assistant with web browsing, court hearing calendar, email 2FA verification, and profile management. Dark theme with red (primary) accents. Polish language interface.
+LexVault is a professional legal practice management platform for lawyers (adwokaci, radcy prawni) and their clients (individual, company). Features role-based access, case management with Polish legal system categories, real-time lawyer-client messaging with PDF attachments, document management, advanced AI legal assistant with Polish law knowledge and web browsing, court hearing calendar, email 2FA verification, profile management, comprehensive legal pages (privacy/RODO, terms, confidentiality clause). Dark theme with red (primary) accents. Polish language interface.
 
 ## Architecture
 - **Frontend**: React + TypeScript + Tailwind CSS + Shadcn UI components
 - **Backend**: Node.js + Express
 - **Database**: PostgreSQL (Drizzle ORM)
 - **Auth**: Replit Auth (OIDC - supports Google, GitHub, Apple, email login)
-- **AI**: OpenAI via Replit AI Integrations (ChatGPT with web search via DuckDuckGo)
+- **AI**: OpenAI GPT-4o via Replit AI Integrations (comprehensive Polish law knowledge, web search via DuckDuckGo)
 - **Email**: SendGrid (verification emails with branded HTML templates)
 - **File Upload**: Multer (PDF, JPG, PNG, DOCX - max 10MB)
 
@@ -18,11 +18,27 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `klient` - Individual client: views assigned cases, sends messages, views hearings (read-only)
 - `firma` - Company client: same as klient but with company info (NIP, company name)
 
+## Admin Access
+- Owner-only admin: goldservicepoland@gmail.com is automatically set as admin on login
+- Admin toggle removed from UI - only the owner email gets admin privileges
+- Admin can view all users, delete accounts
+
+## Case Categories (Polish Legal System)
+- `cywilne` - Sprawy cywilne (civil: debt, damages, property, inheritance, contracts, eviction)
+- `rodzinne` - Sprawy rodzinne i nieletnich (family: divorce, alimony, custody, adoption)
+- `karne` - Sprawy karne (criminal: theft, fraud, assault, narcotics, homicide)
+- `pracy` - Prawo pracy (labor: dismissal, wages, mobbing, discrimination)
+- `ubezpieczen_spolecznych` - Prawo ubezpieczen spolecznych (social insurance: ZUS appeals, pensions)
+- `gospodarcze` - Sprawy gospodarcze (commercial: disputes between companies)
+- `wieczystoksiegowe` - Sprawy wieczystoksiegowe (land registry)
+- `upadlosciowe` - Sprawy upadlosciowe i restrukturyzacyjne (bankruptcy, restructuring)
+- `administracyjne` - Sprawy administracyjne (administrative: tax, permits, WSA/NSA appeals)
+
 ## Database Schema
 - `sessions`: sid (PK), sess (jsonb), expire - Replit Auth sessions
 - `users`: id (varchar PK, UUID), email, firstName, lastName, profileImageUrl, isAdmin, role, onboardingCompleted, emailVerified, phone, pesel, address, street, city, postalCode, voivodeship, country, companyName, nip, barNumber, lawyerType, createdAt, updatedAt
 - `client_records`: id (serial PK), lawyerId (FK->users), userId (FK->users nullable), firstName, lastName, pesel, email, phone, address, city, postalCode, notes, createdAt
-- `cases`: id (serial PK), lawyerId (FK->users), clientRecordId (FK->client_records), title, caseNumber, description, status, createdAt, updatedAt
+- `cases`: id (serial PK), lawyerId (FK->users), clientRecordId (FK->client_records), title, caseNumber, category, description, status, createdAt, updatedAt
 - `folders`: id (serial PK), userId (FK->users), caseId (FK->cases), name, parentFolderId, createdAt
 - `files`: id (serial PK), userId (FK->users), folderId (FK->folders), caseId (FK->cases), name, path, type, size, createdAt
 - `direct_messages`: id (serial PK), caseId (FK->cases), senderId (FK->users), recipientId (FK->users), content, editedAt, createdAt
@@ -33,18 +49,19 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `court_hearings`: id (serial PK), caseId (FK->cases), lawyerId (FK->users), title, description, courtName, courtRoom, startsAt, endsAt, createdAt
 
 ## Key Routes
-- `/` - Landing page (public)
+- `/` - Landing page (public) - comprehensive with hero, features, security, how-it-works sections
 - `/onboarding` - Mandatory 4-step profile completion after first login (role, basic data, address, role-specific)
 - `/verify-email` - Email 2FA verification (6-digit code)
 - `/dashboard` - Role-specific dashboard (protected, requires onboarding + email verification)
 - `/case/:id` - Case detail with messaging (protected)
-- `/chat` - AI chat assistant with web browsing (protected)
+- `/chat` - AI chat assistant with Polish law knowledge and web browsing (protected)
 - `/calendar` - Court hearing calendar with month/week views (protected)
 - `/profile` - Profile settings - view/edit personal data (protected)
-- `/admin` - Admin user management (protected, admin only)
+- `/admin` - Admin user management (protected, owner-only)
 - `/contact` - Contact information
-- `/terms` - Terms of service
-- `/privacy` - Privacy policy (RODO)
+- `/terms` - Terms of service (comprehensive, 2026)
+- `/privacy` - Privacy policy / RODO (comprehensive, 2026)
+- `/confidentiality` - Klauzula poufnosci (confidentiality clause)
 
 ## API Endpoints
 - `GET /api/login` - Initiate Replit Auth login
@@ -59,7 +76,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `GET/POST/PATCH/DELETE /api/clients` - Client records CRUD (lawyer only)
 - `GET /api/cases` - List cases (role-aware)
 - `GET /api/cases/:id` - Get single case with access control
-- `POST/PATCH/DELETE /api/cases` - Case management (lawyer only)
+- `POST/PATCH/DELETE /api/cases` - Case management (lawyer only, now includes category field)
 - `GET/POST /api/cases/:id/messages` - Case messaging (both parties)
 - `POST /api/cases/:id/messages/upload` - Send message with file attachment
 - `PATCH /api/messages/:id` - Edit own message
@@ -70,15 +87,16 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `PATCH/DELETE /api/files/:id` - File management
 - `GET /api/search?q=` - Search
 - `GET/POST/DELETE /api/chat/conversations` - AI chat conversations
-- `GET/POST /api/chat/conversations/:id/messages` - AI chat messages (SSE streaming, web search)
+- `GET/POST /api/chat/conversations/:id/messages` - AI chat messages (SSE streaming, web search, GPT-4o)
 - `GET /api/hearings?start=&end=` - List hearings (role-aware, date-filtered)
 - `GET /api/cases/:caseId/hearings` - Case hearings (with access control)
 - `POST /api/hearings` - Create hearing (lawyer only)
 - `PATCH /api/hearings/:id` - Update hearing (lawyer only)
 - `DELETE /api/hearings/:id` - Delete hearing (lawyer only)
-- `GET/PATCH/DELETE /api/admin/users` - Admin user management
+- `GET/DELETE /api/admin/users` - Admin user management (owner-only)
 
 ## Security
+- Owner-only admin: goldservicepoland@gmail.com auto-promoted on login
 - Role-based middleware: requireLawyer, requireAdmin
 - File download authorization: owner check + case participant check
 - Hearings access control: lawyer ownership + client case participation check
@@ -90,6 +108,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 
 ## Polish Constants
 - 16 voivodeships (VOIVODESHIP_LABELS in shared/schema.ts)
+- 9 case categories (CASE_CATEGORY_LABELS, CASE_CATEGORY_DESCRIPTIONS in shared/schema.ts)
 - Polish date/time formatting (Europe/Warsaw timezone, client/src/lib/date-utils.ts)
 - All UI text in Polish
 
@@ -98,12 +117,11 @@ Dominik Solarz, ul. Piastowska 2/1, 40-005 Katowice
 Email: goldservicepoland@gmail.com
 
 ## Recent Changes
-- Email 2FA verification flow with branded SendGrid templates
-- Enhanced 4-step onboarding wizard (role, basic data, address, role-specific data)
-- NIP and PESEL validation with Polish checksum algorithms
-- Profile settings page for viewing/editing personal data
-- Court hearing calendar with month and week views
-- Hearing CRUD API with access control (lawyers manage, clients view)
-- Polish date/time formatting utility (Europe/Warsaw timezone)
-- Added emailVerified, street, voivodeship, country fields to users
-- Added email_verifications and court_hearings database tables
+- Case categories based on Polish legal system (9 branches: cywilne, rodzinne, karne, pracy, ubezpieczen spolecznych, gospodarcze, wieczystoksiegowe, upadlosciowe, administracyjne)
+- Enhanced landing page with comprehensive sections (hero, features, how-it-works, security, confidentiality)
+- Comprehensive Privacy Policy (RODO) page for 2026 Polish law with PUODO info
+- Confidentiality Clause (Klauzula poufnosci) page with professional secrecy obligations
+- Updated Terms of Service for 2026 with detailed definitions and AI disclaimer
+- Owner-only admin system (goldservicepoland@gmail.com whitelisted, admin toggle removed)
+- Advanced AI Chat with GPT-4o model, comprehensive Polish law system prompt covering all case categories
+- AI legal disclaimer in chat responses

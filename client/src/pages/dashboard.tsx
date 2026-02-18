@@ -25,6 +25,7 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger
 } from "@/components/ui/tabs";
 import type { Folder as FolderType, File as FileType, ClientRecord, Case } from "@shared/schema";
+import { CASE_CATEGORY_LABELS } from "@shared/schema";
 
 function isLawyer(role: string | null | undefined): boolean {
   return role === "adwokat" || role === "radca_prawny";
@@ -150,7 +151,7 @@ function ClientDashboard() {
 function CasesPanel() {
   const [, setLocation] = useLocation();
   const [newCaseOpen, setNewCaseOpen] = useState(false);
-  const [caseForm, setCaseForm] = useState({ title: "", caseNumber: "", description: "", clientRecordId: "" });
+  const [caseForm, setCaseForm] = useState({ title: "", caseNumber: "", category: "", description: "", clientRecordId: "" });
   const { toast } = useToast();
 
   const { data: allCases = [], isLoading } = useQuery<Case[]>({ queryKey: ["/api/cases"] });
@@ -161,6 +162,7 @@ function CasesPanel() {
       await apiRequest("POST", "/api/cases", {
         title: caseForm.title,
         caseNumber: caseForm.caseNumber || undefined,
+        category: caseForm.category || undefined,
         description: caseForm.description || undefined,
         clientRecordId: caseForm.clientRecordId ? parseInt(caseForm.clientRecordId) : undefined,
       });
@@ -168,7 +170,7 @@ function CasesPanel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       setNewCaseOpen(false);
-      setCaseForm({ title: "", caseNumber: "", description: "", clientRecordId: "" });
+      setCaseForm({ title: "", caseNumber: "", category: "", description: "", clientRecordId: "" });
       toast({ title: "Sprawa utworzona" });
     },
     onError: (e: any) => toast({ title: "Blad", description: e.message, variant: "destructive" }),
@@ -200,6 +202,20 @@ function CasesPanel() {
               <div>
                 <Label>Sygnatura</Label>
                 <Input value={caseForm.caseNumber} onChange={(e) => setCaseForm(p => ({ ...p, caseNumber: e.target.value }))} placeholder="np. III C 123/24" data-testid="input-case-number" />
+              </div>
+              <div>
+                <Label>Kategoria sprawy</Label>
+                <select
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={caseForm.category}
+                  onChange={(e) => setCaseForm(p => ({ ...p, category: e.target.value }))}
+                  data-testid="select-case-category"
+                >
+                  <option value="">Wybierz kategorie</option>
+                  {Object.entries(CASE_CATEGORY_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label>Klient</Label>
@@ -249,6 +265,7 @@ function CasesPanel() {
                         <span className="font-medium truncate">{c.title}</span>
                       </div>
                       {c.caseNumber && <p className="text-xs text-muted-foreground mb-1">Sygn.: {c.caseNumber}</p>}
+                      {c.category && <p className="text-xs text-muted-foreground mb-1">{CASE_CATEGORY_LABELS[c.category] || c.category}</p>}
                       {client && <p className="text-xs text-muted-foreground">Klient: {client.firstName} {client.lastName}</p>}
                       <Badge variant={c.status === "active" ? "default" : "secondary"} className="mt-2">
                         {c.status === "active" ? "Aktywna" : "Zamknieta"}
