@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -6,36 +6,142 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Scale, User, Building2, Briefcase, ArrowRight, ArrowLeft, Lock } from "lucide-react";
+import { Shield, Scale, User, Building2, Briefcase, ArrowRight, ArrowLeft, Lock, Eye, EyeOff, Search, ChevronDown, AlertTriangle, Globe, Phone } from "lucide-react";
 import { VOIVODESHIP_LABELS, validateNIP, validatePESEL } from "@shared/schema";
+import { COUNTRIES, POLISH_CITIES, isDisposableEmail } from "@/lib/countries-data";
 
 type Role = "adwokat" | "radca_prawny" | "klient" | "firma";
+
+function SearchableSelect({ value, onChange, options, placeholder, label, testId, error }: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  label: string;
+  testId: string;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = options.filter(o =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedLabel = options.find(o => o.value === value)?.label || "";
+
+  return (
+    <div ref={ref} className="relative">
+      <Label>{label}</Label>
+      <div
+        className={`flex items-center w-full rounded-md border bg-background px-3 py-2 text-sm cursor-pointer ${error ? "border-destructive" : "border-input"}`}
+        onClick={() => { setOpen(!open); setTimeout(() => inputRef.current?.focus(), 50); }}
+        data-testid={testId}
+      >
+        <span className={`flex-1 ${value ? "" : "text-muted-foreground"}`}>
+          {selectedLabel || placeholder}
+        </span>
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+      </div>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-input bg-background shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2 border-b border-input">
+            <div className="flex items-center gap-2 px-2">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                ref={inputRef}
+                type="text"
+                className="w-full bg-transparent text-sm outline-none"
+                placeholder="Szukaj..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                data-testid={`${testId}-search`}
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto max-h-48">
+            {filtered.length === 0 ? (
+              <p className="text-sm text-muted-foreground p-3 text-center">Brak wynikow</p>
+            ) : (
+              filtered.map((o) => (
+                <div
+                  key={o.value}
+                  className={`px-3 py-2 text-sm cursor-pointer hover-elevate ${o.value === value ? "bg-primary/10 text-primary" : ""}`}
+                  onClick={() => { onChange(o.value); setOpen(false); setSearch(""); }}
+                  data-testid={`${testId}-option-${o.value}`}
+                >
+                  {o.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  );
+}
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<Role | null>(null);
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", phone: "",
-    street: "", city: "", postalCode: "", voivodeship: "", country: "Polska",
+    phoneCountry: "PL",
+    street: "", city: "", postalCode: "", voivodeship: "", country: "PL",
     pesel: "", companyName: "", nip: "", barNumber: "",
   });
+  const [showPesel, setShowPesel] = useState(false);
+  const [showNip, setShowNip] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false);
+  const [phoneCountrySearch, setPhoneCountrySearch] = useState("");
+  const phoneDropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (phoneDropdownRef.current && !phoneDropdownRef.current.contains(e.target as Node)) {
+        setPhoneDropdownOpen(false);
+        setPhoneCountrySearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectedPhoneCountry = COUNTRIES.find(c => c.code === formData.phoneCountry);
+  const selectedCountry = COUNTRIES.find(c => c.code === formData.country);
+  const isPoland = formData.country === "PL";
+
   const submitMutation = useMutation({
     mutationFn: async () => {
+      const phoneCode = selectedPhoneCountry?.phoneCode || "+48";
+      const fullPhone = formData.phone ? `${phoneCode} ${formData.phone}` : "";
+      const countryName = selectedCountry?.name || "Polska";
+
       const body: any = {
         role,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone,
+        phone: fullPhone,
         street: formData.street,
         city: formData.city,
         postalCode: formData.postalCode,
-        voivodeship: formData.voivodeship,
-        country: formData.country || "Polska",
+        voivodeship: isPoland ? formData.voivodeship : "",
+        country: countryName,
       };
 
       if (role === "adwokat" || role === "radca_prawny") {
@@ -80,8 +186,13 @@ export default function Onboarding() {
     const newErrors: Record<string, string> = {};
     if (formData.firstName.trim().length < 2) newErrors.firstName = "Minimum 2 znaki";
     if (formData.lastName.trim().length < 2) newErrors.lastName = "Minimum 2 znaki";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Nieprawidlowy email";
-    if (formData.phone.replace(/[\s-+]/g, "").length < 9) newErrors.phone = "Minimum 9 cyfr";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Nieprawidlowy email";
+    } else if (isDisposableEmail(formData.email)) {
+      newErrors.email = "Tymczasowe adresy email nie sa akceptowane. Uzyj stalego adresu email.";
+    }
+    const phoneDigits = formData.phone.replace(/[\s-]/g, "");
+    if (phoneDigits.length < 6) newErrors.phone = "Minimum 6 cyfr";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,8 +201,13 @@ export default function Onboarding() {
     const newErrors: Record<string, string> = {};
     if (formData.street.trim().length < 3) newErrors.street = "Minimum 3 znaki";
     if (formData.city.trim().length < 2) newErrors.city = "Minimum 2 znaki";
-    if (!/^\d{2}-\d{3}$/.test(formData.postalCode)) newErrors.postalCode = "Format: XX-XXX";
-    if (!formData.voivodeship) newErrors.voivodeship = "Wymagane";
+    if (isPoland) {
+      if (!/^\d{2}-\d{3}$/.test(formData.postalCode)) newErrors.postalCode = "Format: XX-XXX";
+      if (!formData.voivodeship) newErrors.voivodeship = "Wymagane";
+    } else {
+      if (formData.postalCode.trim().length < 3) newErrors.postalCode = "Minimum 3 znaki";
+    }
+    if (!formData.country) newErrors.country = "Wymagane";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -121,6 +237,20 @@ export default function Onboarding() {
   };
 
   const totalSteps = 4;
+
+  const countryOptions = COUNTRIES.map(c => ({ value: c.code, label: c.name }));
+  const cityOptions = isPoland
+    ? POLISH_CITIES.map(c => ({ value: c, label: c }))
+    : [];
+  const voivodeshipOptions = Object.entries(VOIVODESHIP_LABELS).map(([key, label]) => ({
+    value: key, label,
+  }));
+
+  const filteredPhoneCountries = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(phoneCountrySearch.toLowerCase()) ||
+    c.phoneCode.includes(phoneCountrySearch) ||
+    c.code.toLowerCase().includes(phoneCountrySearch.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -171,23 +301,106 @@ export default function Onboarding() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="firstName">Imie *</Label>
-                  <Input id="firstName" value={formData.firstName} onChange={(e) => updateField("firstName", e.target.value)} placeholder="Jan" data-testid="input-first-name" />
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => updateField("firstName", e.target.value)}
+                    placeholder="Jan"
+                    autoComplete="off"
+                    data-testid="input-first-name"
+                  />
                   {errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
                 </div>
                 <div>
                   <Label htmlFor="lastName">Nazwisko *</Label>
-                  <Input id="lastName" value={formData.lastName} onChange={(e) => updateField("lastName", e.target.value)} placeholder="Kowalski" data-testid="input-last-name" />
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => updateField("lastName", e.target.value)}
+                    placeholder="Kowalski"
+                    autoComplete="off"
+                    data-testid="input-last-name"
+                  />
                   {errors.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName}</p>}
                 </div>
               </div>
               <div>
                 <Label htmlFor="email">Email *</Label>
-                <Input id="email" type="email" value={formData.email} onChange={(e) => updateField("email", e.target.value)} placeholder="jan.kowalski@example.com" data-testid="input-email" />
-                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  placeholder="jan.kowalski@example.com"
+                  autoComplete="off"
+                  data-testid="input-email"
+                />
+                {errors.email && (
+                  <div className="flex items-start gap-1.5 mt-1">
+                    {isDisposableEmail(formData.email) && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+                    <p className="text-xs text-destructive">{errors.email}</p>
+                  </div>
+                )}
               </div>
               <div>
-                <Label htmlFor="phone">Telefon *</Label>
-                <Input id="phone" value={formData.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="+48 123 456 789" data-testid="input-phone" />
+                <Label>Telefon *</Label>
+                <div className="flex gap-0">
+                  <div ref={phoneDropdownRef} className="relative">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 h-9 px-2.5 rounded-l-md border border-r-0 border-input bg-muted/50 text-sm whitespace-nowrap min-w-[90px]"
+                      onClick={() => { setPhoneDropdownOpen(!phoneDropdownOpen); setPhoneCountrySearch(""); }}
+                      data-testid="button-phone-country"
+                    >
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-medium">{selectedPhoneCountry?.phoneCode || "+48"}</span>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                    </button>
+                    {phoneDropdownOpen && (
+                      <div className="absolute z-50 top-full mt-1 left-0 w-64 rounded-md border border-input bg-background shadow-lg max-h-60 overflow-hidden">
+                        <div className="p-2 border-b border-input">
+                          <div className="flex items-center gap-2 px-2">
+                            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <input
+                              type="text"
+                              className="w-full bg-transparent text-sm outline-none"
+                              placeholder="Szukaj kraju..."
+                              value={phoneCountrySearch}
+                              onChange={(e) => setPhoneCountrySearch(e.target.value)}
+                              autoFocus
+                              data-testid="input-phone-country-search"
+                            />
+                          </div>
+                        </div>
+                        <div className="overflow-y-auto max-h-48">
+                          {filteredPhoneCountries.map((c) => (
+                            <div
+                              key={c.code}
+                              className={`flex items-center justify-between gap-2 px-3 py-2 text-sm cursor-pointer hover-elevate ${c.code === formData.phoneCountry ? "bg-primary/10 text-primary" : ""}`}
+                              onClick={() => {
+                                updateField("phoneCountry", c.code);
+                                setPhoneDropdownOpen(false);
+                                setPhoneCountrySearch("");
+                              }}
+                              data-testid={`phone-country-${c.code}`}
+                            >
+                              <span>{c.name}</span>
+                              <span className="text-muted-foreground font-mono text-xs">{c.phoneCode}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => updateField("phone", e.target.value.replace(/[^\d\s-]/g, ""))}
+                    placeholder="123 456 789"
+                    className="rounded-l-none"
+                    autoComplete="off"
+                    data-testid="input-phone"
+                  />
+                </div>
                 {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
               </div>
             </div>
@@ -199,43 +412,86 @@ export default function Onboarding() {
             <h2 className="text-xl font-semibold text-center mb-2">Adres</h2>
             <p className="text-sm text-muted-foreground text-center mb-6">Podaj swoj adres zamieszkania / siedziby</p>
             <div className="space-y-4">
+              <SearchableSelect
+                value={formData.country}
+                onChange={(val) => {
+                  updateField("country", val);
+                  if (val !== "PL") {
+                    setFormData(prev => ({ ...prev, country: val, voivodeship: "", city: "" }));
+                  }
+                }}
+                options={countryOptions}
+                placeholder="Wybierz kraj..."
+                label="Kraj *"
+                testId="select-country"
+                error={errors.country}
+              />
+
               <div>
                 <Label htmlFor="street">Ulica *</Label>
-                <Input id="street" value={formData.street} onChange={(e) => updateField("street", e.target.value)} placeholder="ul. Piastowska 2/1" data-testid="input-street" />
+                <Input
+                  id="street"
+                  value={formData.street}
+                  onChange={(e) => updateField("street", e.target.value)}
+                  placeholder="ul. Piastowska 2/1"
+                  autoComplete="off"
+                  data-testid="input-street"
+                />
                 {errors.street && <p className="text-xs text-destructive mt-1">{errors.street}</p>}
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="postalCode">Kod pocztowy *</Label>
-                  <Input id="postalCode" value={formData.postalCode} onChange={(e) => updateField("postalCode", e.target.value)} placeholder="40-005" data-testid="input-postal-code" />
+                  <Input
+                    id="postalCode"
+                    value={formData.postalCode}
+                    onChange={(e) => updateField("postalCode", e.target.value)}
+                    placeholder={isPoland ? "40-005" : "Kod pocztowy"}
+                    autoComplete="off"
+                    data-testid="input-postal-code"
+                  />
                   {errors.postalCode && <p className="text-xs text-destructive mt-1">{errors.postalCode}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="city">Miasto *</Label>
-                  <Input id="city" value={formData.city} onChange={(e) => updateField("city", e.target.value)} placeholder="Katowice" data-testid="input-city" />
-                  {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
+                  {isPoland ? (
+                    <SearchableSelect
+                      value={formData.city}
+                      onChange={(val) => updateField("city", val)}
+                      options={cityOptions}
+                      placeholder="Wybierz miasto..."
+                      label="Miasto *"
+                      testId="select-city"
+                      error={errors.city}
+                    />
+                  ) : (
+                    <>
+                      <Label htmlFor="city">Miasto *</Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => updateField("city", e.target.value)}
+                        placeholder="Miasto"
+                        autoComplete="off"
+                        data-testid="input-city"
+                      />
+                      {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
+                    </>
+                  )}
                 </div>
               </div>
-              <div>
-                <Label htmlFor="voivodeship">Wojewodztwo *</Label>
-                <select
-                  id="voivodeship"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+
+              {isPoland && (
+                <SearchableSelect
                   value={formData.voivodeship}
-                  onChange={(e) => updateField("voivodeship", e.target.value)}
-                  data-testid="select-voivodeship"
-                >
-                  <option value="">Wybierz wojewodztwo...</option>
-                  {Object.entries(VOIVODESHIP_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-                {errors.voivodeship && <p className="text-xs text-destructive mt-1">{errors.voivodeship}</p>}
-              </div>
-              <div>
-                <Label htmlFor="country">Kraj</Label>
-                <Input id="country" value={formData.country} onChange={(e) => updateField("country", e.target.value)} placeholder="Polska" data-testid="input-country" />
-              </div>
+                  onChange={(val) => updateField("voivodeship", val)}
+                  options={voivodeshipOptions}
+                  placeholder="Wybierz wojewodztwo..."
+                  label="Wojewodztwo *"
+                  testId="select-voivodeship"
+                  error={errors.voivodeship}
+                />
+              )}
             </div>
           </div>
         )}
@@ -251,11 +507,39 @@ export default function Onboarding() {
                 <>
                   <div>
                     <Label htmlFor="barNumber">Numer wpisu na liste {role === "adwokat" ? "adwokatow" : "radcow prawnych"}</Label>
-                    <Input id="barNumber" value={formData.barNumber} onChange={(e) => updateField("barNumber", e.target.value)} placeholder="np. KAT/Adw/1234" data-testid="input-bar-number" />
+                    <Input
+                      id="barNumber"
+                      value={formData.barNumber}
+                      onChange={(e) => updateField("barNumber", e.target.value)}
+                      placeholder="np. KAT/Adw/1234"
+                      autoComplete="off"
+                      data-testid="input-bar-number"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="nip">NIP (opcjonalny)</Label>
-                    <Input id="nip" value={formData.nip} onChange={(e) => updateField("nip", e.target.value.replace(/[^\d-\s]/g, ""))} placeholder="1234567890" maxLength={13} data-testid="input-nip" />
+                    <div className="relative">
+                      <Input
+                        id="nip"
+                        type={showNip ? "text" : "password"}
+                        value={formData.nip}
+                        onChange={(e) => updateField("nip", e.target.value.replace(/[^\d-\s]/g, ""))}
+                        placeholder="1234567890"
+                        maxLength={13}
+                        autoComplete="off"
+                        className="pr-10"
+                        data-testid="input-nip"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        onClick={() => setShowNip(!showNip)}
+                        tabIndex={-1}
+                        data-testid="button-toggle-nip"
+                      >
+                        {showNip ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     {errors.nip && <p className="text-xs text-destructive mt-1">{errors.nip}</p>}
                   </div>
                 </>
@@ -264,12 +548,40 @@ export default function Onboarding() {
                 <>
                   <div>
                     <Label htmlFor="companyName">Nazwa firmy *</Label>
-                    <Input id="companyName" value={formData.companyName} onChange={(e) => updateField("companyName", e.target.value)} placeholder="Kancelaria Prawna Sp. z o.o." data-testid="input-company-name" />
+                    <Input
+                      id="companyName"
+                      value={formData.companyName}
+                      onChange={(e) => updateField("companyName", e.target.value)}
+                      placeholder="Kancelaria Prawna Sp. z o.o."
+                      autoComplete="off"
+                      data-testid="input-company-name"
+                    />
                     {errors.companyName && <p className="text-xs text-destructive mt-1">{errors.companyName}</p>}
                   </div>
                   <div>
                     <Label htmlFor="nip">NIP *</Label>
-                    <Input id="nip" value={formData.nip} onChange={(e) => updateField("nip", e.target.value.replace(/[^\d-\s]/g, ""))} placeholder="1234567890" maxLength={13} data-testid="input-nip" />
+                    <div className="relative">
+                      <Input
+                        id="nip"
+                        type={showNip ? "text" : "password"}
+                        value={formData.nip}
+                        onChange={(e) => updateField("nip", e.target.value.replace(/[^\d-\s]/g, ""))}
+                        placeholder="1234567890"
+                        maxLength={13}
+                        autoComplete="off"
+                        className="pr-10"
+                        data-testid="input-nip"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        onClick={() => setShowNip(!showNip)}
+                        tabIndex={-1}
+                        data-testid="button-toggle-nip"
+                      >
+                        {showNip ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     {errors.nip && <p className="text-xs text-destructive mt-1">{errors.nip}</p>}
                   </div>
                 </>
@@ -277,7 +589,28 @@ export default function Onboarding() {
               {(role === "klient" || role === "firma") && (
                 <div>
                   <Label htmlFor="pesel">{role === "firma" ? "PESEL reprezentanta" : "PESEL"}</Label>
-                  <Input id="pesel" value={formData.pesel} onChange={(e) => updateField("pesel", e.target.value.replace(/\D/g, ""))} placeholder="12345678901" maxLength={11} data-testid="input-pesel" />
+                  <div className="relative">
+                    <Input
+                      id="pesel"
+                      type={showPesel ? "text" : "password"}
+                      value={formData.pesel}
+                      onChange={(e) => updateField("pesel", e.target.value.replace(/\D/g, ""))}
+                      placeholder="12345678901"
+                      maxLength={11}
+                      autoComplete="off"
+                      className="pr-10"
+                      data-testid="input-pesel"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      onClick={() => setShowPesel(!showPesel)}
+                      tabIndex={-1}
+                      data-testid="button-toggle-pesel"
+                    >
+                      {showPesel ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {errors.pesel && <p className="text-xs text-destructive mt-1">{errors.pesel}</p>}
                 </div>
               )}

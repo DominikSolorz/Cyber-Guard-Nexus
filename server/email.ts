@@ -139,7 +139,9 @@ function buildVerificationEmailHtml(code: string, userName: string): string {
 
 export async function sendVerificationEmail(toEmail: string, userName: string, code: string): Promise<boolean> {
   try {
+    console.log(`[Email] Sending verification code to ${toEmail} for user ${userName}`);
     const { client, fromEmail } = await getUncachableSendGridClient();
+    console.log(`[Email] SendGrid connected, from: ${fromEmail}`);
 
     const msg = {
       to: toEmail,
@@ -151,10 +153,16 @@ export async function sendVerificationEmail(toEmail: string, userName: string, c
       html: buildVerificationEmailHtml(code, userName),
     };
 
-    await client.send(msg);
+    const result = await client.send(msg);
+    console.log(`[Email] Verification email sent successfully to ${toEmail}, status: ${result?.[0]?.statusCode}`);
     return true;
   } catch (error: any) {
-    console.error('SendGrid error:', error?.response?.body || error.message);
+    console.error('[Email] SendGrid error details:', JSON.stringify({
+      message: error?.message,
+      code: error?.code,
+      response: error?.response?.body,
+      statusCode: error?.response?.statusCode,
+    }));
     return false;
   }
 }

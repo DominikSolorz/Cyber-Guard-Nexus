@@ -87,10 +87,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   });
 
+  const DISPOSABLE_DOMAINS = new Set([
+    "tempmail.com","temp-mail.org","guerrillamail.com","guerrillamail.de","guerrillamail.net",
+    "mailinator.com","throwaway.email","yopmail.com","10minutemail.com","trashmail.com",
+    "sharklasers.com","grr.la","guerrillamailblock.com","maildrop.cc","dispostable.com",
+    "fakeinbox.com","mailnesia.com","temp-mail.io","tempail.com","tempr.email",
+    "binkmail.com","mytemp.email","mohmal.com","getnada.com","emailondeck.com",
+    "mintemail.com","burnermail.io","inboxbear.com","mailsac.com","harakirimail.com",
+    "crazymailing.com","tempinbox.com","trashmail.me","trashmail.net","mailcatch.com",
+    "mailscrap.com","discard.email","discardmail.com","spamgourmet.com","mailnull.com",
+    "spamfree24.org","jetable.org","trash-mail.com","mail-temporaire.fr","tempmailo.com",
+    "tempomail.fr","tmpmail.net","tmpmail.org","wegwerfmail.de","wegwerfmail.net",
+    "mailexpire.com","noclickemail.com","guerrillamailblock.com","spam4.me","grr.la",
+    "tmail.ws","tmail.link","tempail.com","filzmail.com","ezztt.com",
+    "mailforspam.com","rmqkr.net","eyepaste.com","fakemailgenerator.com","armyspy.com",
+    "cuvox.de","dayrep.com","einrot.com","fleckens.hu","gustr.com",
+    "jourrapide.com","rhyta.com","superrito.com","teleworm.us"
+  ]);
+
+  function isDisposableEmailServer(email: string): boolean {
+    const domain = email.split("@")[1]?.toLowerCase();
+    if (!domain) return false;
+    return DISPOSABLE_DOMAINS.has(domain);
+  }
+
   app.post("/api/onboarding", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
       const parsed = onboardingSchema.parse(req.body);
+
+      if (isDisposableEmailServer(parsed.email)) {
+        return res.status(400).json({ message: "Tymczasowe adresy email nie sa akceptowane. Uzyj stalego adresu email." });
+      }
+
+      const isPoland = !parsed.country || parsed.country === "Polska" || parsed.country === "PL";
+      if (isPoland) {
+        if (!/^\d{2}-\d{3}$/.test(parsed.postalCode)) {
+          return res.status(400).json({ message: "Nieprawidlowy kod pocztowy. Format: XX-XXX" });
+        }
+        if (!parsed.voivodeship || parsed.voivodeship.trim().length === 0) {
+          return res.status(400).json({ message: "Wojewodztwo jest wymagane dla adresu w Polsce" });
+        }
+      }
 
       if (parsed.nip && !validateNIP(parsed.nip)) {
         return res.status(400).json({ message: "Nieprawidlowy numer NIP" });
@@ -137,10 +175,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const code = generateVerificationCode();
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
       await storage.createEmailVerification(userId, parsed.email, code, expiresAt);
-      await sendVerificationEmail(parsed.email, `${parsed.firstName} ${parsed.lastName}`, code);
 
-      res.json(user);
+      const emailSent = await sendVerificationEmail(parsed.email, `${parsed.firstName} ${parsed.lastName}`, code);
+      if (!emailSent) {
+        console.warn(`[Onboarding] Email verification failed to send to ${parsed.email}, user can resend from verify page`);
+      }
+
+      res.json({ ...user, emailSent });
     } catch (error: any) {
+      console.error("[Onboarding] Error:", error.message);
       res.status(400).json({ message: error.message });
     }
   });

@@ -132,3 +132,4 @@ Email: goldservicepoland@gmail.com
 - Advanced AI Chat with GPT-4o model, comprehensive Polish law system prompt covering all case categories
 - AI legal disclaimer in chat responses
 - Advanced contact form with 9 categories (login help, password reset, account deletion, account recovery, cooperation, technical, legal, complaint, other), sender type selection, case category for legal questions, file attachment, priority levels, email notification to owner via SendGrid
+- Enhanced onboarding form: country selector dropdown, phone country code prefix (+48 etc.), searchable city selection (300+ Polish cities), disposable email detection, show/hide toggle for PESEL/NIP, browser autocomplete disabled on sensitive fields, dynamic address form (voivodeship only for Poland), international address support
