@@ -46,6 +46,8 @@ export const emailVerifications = pgTable("email_verifications", {
   code: varchar("code").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
+  failedAttempts: integer("failed_attempts").default(0).notNull(),
+  lockedUntil: timestamp("locked_until"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

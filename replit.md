@@ -37,6 +37,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 ## Database Schema
 - `sessions`: sid (PK), sess (jsonb), expire - Replit Auth sessions
 - `users`: id (varchar PK, UUID), email, firstName, lastName, profileImageUrl, isAdmin, role, onboardingCompleted, emailVerified, phone, pesel, address, street, city, postalCode, voivodeship, country, companyName, nip, barNumber, lawyerType, createdAt, updatedAt
+- `email_verifications`: id (serial PK), userId (FK->users), email, code (SHA-256 hash), expiresAt, usedAt, failedAttempts (default 0), lockedUntil, createdAt
 - `client_records`: id (serial PK), lawyerId (FK->users), userId (FK->users nullable), firstName, lastName, pesel, email, phone, address, city, postalCode, notes, createdAt
 - `cases`: id (serial PK), lawyerId (FK->users), clientRecordId (FK->client_records), title, caseNumber, category, description, status, createdAt, updatedAt
 - `folders`: id (serial PK), userId (FK->users), caseId (FK->cases), name, parentFolderId, createdAt
@@ -106,7 +107,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - Role-based middleware: requireLawyer, requireAdmin
 - File download authorization: owner check + case participant check
 - Hearings access control: lawyer ownership + client case participation check
-- Email 2FA: gates dashboard access (onboardingCompleted + emailVerified required)
+- Email 2FA: gates dashboard access (onboardingCompleted + emailVerified required), 5-min code expiry, SHA-256 hashed codes in DB, 3-attempt lockout (15 min), resend rate limit (5 per 15 min), crypto.randomBytes code generation, timing-safe comparison
 - Recipient derivation server-side for messages
 - Auth upsert only updates basic profile fields (not role/onboarding)
 - NIP validation: Polish checksum algorithm (weights: 6,5,7,2,3,4,5,6,7, modulo 11)

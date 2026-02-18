@@ -1,4 +1,5 @@
 import sgMail from '@sendgrid/mail';
+import crypto from 'crypto';
 
 let connectionSettings: any;
 
@@ -40,92 +41,95 @@ async function getUncachableSendGridClient() {
 }
 
 function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const buffer = crypto.randomBytes(4);
+  const num = buffer.readUInt32BE(0) % 900000 + 100000;
+  return num.toString();
+}
+
+function hashVerificationCode(code: string): string {
+  return crypto.createHash('sha256').update(code).digest('hex');
+}
+
+function verifyCodeHash(code: string, hash: string): boolean {
+  const inputHash = hashVerificationCode(code);
+  return crypto.timingSafeEqual(Buffer.from(inputHash), Buffer.from(hash));
 }
 
 function buildVerificationEmailHtml(code: string, userName: string): string {
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LexVault - Kod weryfikacyjny</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0a0a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#141414;border-radius:12px;border:1px solid #262626;overflow:hidden;">
-          
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#141414;border-radius:8px;border:1px solid #262626;overflow:hidden;">
+
           <tr>
-            <td style="background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);padding:32px 40px;text-align:center;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center">
-                    <div style="display:inline-block;width:48px;height:48px;background-color:rgba(255,255,255,0.2);border-radius:10px;line-height:48px;font-size:24px;color:#ffffff;margin-bottom:12px;">&#x1F6E1;</div>
-                    <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:1px;">
-                      Lex<span style="color:#fecaca;">Vault</span>
-                    </h1>
-                    <p style="margin:4px 0 0;font-size:12px;color:#fca5a5;text-transform:uppercase;letter-spacing:2px;">
-                      Platforma Prawna
-                    </p>
-                  </td>
-                </tr>
-              </table>
+            <td style="background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);padding:28px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:1px;">
+                Lex<span style="color:#fecaca;">Vault</span>
+              </h1>
+              <p style="margin:4px 0 0;font-size:11px;color:#fca5a5;text-transform:uppercase;letter-spacing:3px;">
+                Platforma Prawna
+              </p>
             </td>
           </tr>
 
           <tr>
-            <td style="padding:40px;">
-              <h2 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#f5f5f5;">
-                Weryfikacja adresu email
-              </h2>
-              <p style="margin:0 0 24px;font-size:14px;color:#a3a3a3;line-height:1.5;">
-                Witaj <strong style="color:#f5f5f5;">${userName}</strong>,<br/>
-                otrzymujesz ten email, poniewaz rejestrujesz konto w systemie LexVault. Uzyj ponizszego kodu, aby potwierdzic swoj adres email.
+            <td style="padding:36px 40px 24px;">
+              <p style="margin:0 0 20px;font-size:15px;color:#a3a3a3;line-height:1.6;">
+                Witaj <strong style="color:#f5f5f5;">${userName}</strong>,
               </p>
+              <p style="margin:0 0 4px;font-size:17px;color:#f5f5f5;text-align:center;">
+                Oto Twoj kod weryfikacyjny
+              </p>
+            </td>
+          </tr>
 
-              <div style="background-color:#1a1a1a;border:2px solid #dc2626;border-radius:10px;padding:24px;text-align:center;margin-bottom:24px;">
-                <p style="margin:0 0 8px;font-size:12px;color:#a3a3a3;text-transform:uppercase;letter-spacing:2px;">
-                  Twoj kod weryfikacyjny
-                </p>
+          <tr>
+            <td style="padding:0 40px 28px;" align="center">
+              <div style="background-color:#1a1a1a;border:2px solid #dc2626;border-radius:10px;padding:24px 32px;display:inline-block;">
                 <div style="font-size:36px;font-weight:700;color:#ffffff;letter-spacing:8px;font-family:'Courier New',monospace;">
                   ${code}
                 </div>
               </div>
+            </td>
+          </tr>
 
-              <div style="background-color:#1c1917;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:24px;">
-                <p style="margin:0;font-size:13px;color:#d4d4d4;line-height:1.5;">
-                  <strong style="color:#f59e0b;">Wazne:</strong> Kod jest wazny przez <strong>15 minut</strong>. Nigdy nie udostepniaj tego kodu nikomu, nawet pracownikom LexVault. Nikt z naszego zespolu nigdy nie poprosi Cie o ten kod.
+          <tr>
+            <td style="padding:0 40px 28px;">
+              <div style="background-color:#1c1917;border-left:3px solid #f59e0b;border-radius:0 6px 6px 0;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#d4d4d4;line-height:1.6;">
+                  <strong style="color:#f59e0b;">Wazne:</strong> Kod jest wazny przez <strong>5 minut</strong>.
+                  Nigdy nie udostepniaj tego kodu nikomu, nawet pracownikom LexVault.
                 </p>
               </div>
+            </td>
+          </tr>
 
-              <p style="margin:0 0 8px;font-size:13px;color:#737373;line-height:1.5;">
-                Jesli nie rejestrowales/rejestrowalas konta w LexVault, zignoruj ta wiadomosc. Twoje dane sa bezpieczne.
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <p style="margin:0;font-size:13px;color:#737373;line-height:1.5;">
+                Jesli nie rejestrowales/rejestrowalas konta w LexVault, zignoruj te wiadomosc.
+                Twoje dane sa bezpieczne.
               </p>
             </td>
           </tr>
 
           <tr>
-            <td style="background-color:#0f0f0f;padding:24px 40px;border-top:1px solid #262626;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <p style="margin:0;font-size:11px;color:#525252;line-height:1.6;">
-                      LexVault - Platforma Zarzadzania Kancelaria<br/>
-                      Dominik Solarz, ul. Piastowska 2/1, 40-005 Katowice<br/>
-                      Email: goldservicepoland@gmail.com
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-top:12px;">
-                    <p style="margin:0;font-size:10px;color:#404040;">
-                      Ta wiadomosc zostala wyslana automatycznie. Prosimy nie odpowiadac na tego maila.
-                    </p>
-                  </td>
-                </tr>
-              </table>
+            <td style="background-color:#0f0f0f;padding:20px 40px;border-top:1px solid #262626;">
+              <p style="margin:0 0 8px;font-size:11px;color:#525252;line-height:1.6;">
+                &copy; 2026 LexVault. Wszystkie prawa zastrzezone.<br/>
+                Dominik Solarz, ul. Piastowska 2/1, 40-005 Katowice
+              </p>
+              <p style="margin:0;font-size:10px;color:#404040;">
+                Ta wiadomosc zostala wyslana automatycznie. Prosimy nie odpowiadac na tego maila.
+              </p>
             </td>
           </tr>
 
@@ -139,9 +143,8 @@ function buildVerificationEmailHtml(code: string, userName: string): string {
 
 export async function sendVerificationEmail(toEmail: string, userName: string, code: string): Promise<boolean> {
   try {
-    console.log(`[Email] Sending verification code to ${toEmail} for user ${userName}`);
+    console.log(`[Email] Sending verification code to ${toEmail}`);
     const { client, fromEmail } = await getUncachableSendGridClient();
-    console.log(`[Email] SendGrid connected, from: ${fromEmail}`);
 
     const msg = {
       to: toEmail,
@@ -149,15 +152,15 @@ export async function sendVerificationEmail(toEmail: string, userName: string, c
         email: fromEmail,
         name: 'LexVault',
       },
-      subject: `LexVault - Twoj kod weryfikacyjny: ${code}`,
+      subject: 'LexVault - Kod weryfikacyjny',
       html: buildVerificationEmailHtml(code, userName),
     };
 
     const result = await client.send(msg);
-    console.log(`[Email] Verification email sent successfully to ${toEmail}, status: ${result?.[0]?.statusCode}`);
+    console.log(`[Email] Verification email sent to ${toEmail}, status: ${result?.[0]?.statusCode}`);
     return true;
   } catch (error: any) {
-    console.error('[Email] SendGrid error details:', JSON.stringify({
+    console.error('[Email] SendGrid error:', JSON.stringify({
       message: error?.message,
       code: error?.code,
       response: error?.response?.body,
@@ -209,8 +212,7 @@ export async function sendContactNotificationEmail(submission: {
 
     const priorityColor = submission.priority === "pilny" ? "#dc2626" : submission.priority === "wysoki" ? "#f59e0b" : "#22c55e";
 
-    const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="pl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:#0a0a0a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
@@ -272,4 +274,4 @@ export async function sendContactNotificationEmail(submission: {
   }
 }
 
-export { generateVerificationCode };
+export { generateVerificationCode, hashVerificationCode, verifyCodeHash };

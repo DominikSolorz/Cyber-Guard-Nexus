@@ -1,4 +1,4 @@
-import { eq, and, ilike, desc, or, gte, lte } from "drizzle-orm";
+import { eq, and, ilike, desc, or, gte, lte, sql } from "drizzle-orm";
 import { db } from "./db";
 import {
   users, folders, files, conversations, messages,
@@ -60,9 +60,12 @@ export interface IStorage {
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   createMessage(conversationId: number, role: string, content: string): Promise<Message>;
 
-  createEmailVerification(userId: string, email: string, code: string, expiresAt: Date): Promise<EmailVerification>;
+  createEmailVerification(userId: string, email: string, codeHash: string, expiresAt: Date): Promise<EmailVerification>;
   getActiveVerification(userId: string): Promise<EmailVerification | undefined>;
   markVerificationUsed(id: number): Promise<void>;
+  incrementFailedAttempts(id: number): Promise<number>;
+  lockVerification(id: number, lockedUntil: Date): Promise<void>;
+  getRecentVerificationCount(userId: string, sinceMinutes: number): Promise<number>;
 
   getHearingsByCase(caseId: number): Promise<CourtHearing[]>;
   getHearingsByLawyer(lawyerId: string, startDate?: Date, endDate?: Date): Promise<CourtHearing[]>;
@@ -290,8 +293,8 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async createEmailVerification(userId: string, email: string, code: string, expiresAt: Date): Promise<EmailVerification> {
-    const [v] = await db.insert(emailVerifications).values({ userId, email, code, expiresAt }).returning();
+  async createEmailVerification(userId: string, email: string, codeHash: string, expiresAt: Date): Promise<EmailVerification> {
+    const [v] = await db.insert(emailVerifications).values({ userId, email, code: codeHash, expiresAt, failedAttempts: 0 }).returning();
     return v;
   }
 
@@ -308,6 +311,28 @@ export class DatabaseStorage implements IStorage {
 
   async markVerificationUsed(id: number): Promise<void> {
     await db.update(emailVerifications).set({ usedAt: new Date() }).where(eq(emailVerifications.id, id));
+  }
+
+  async incrementFailedAttempts(id: number): Promise<number> {
+    const [v] = await db.update(emailVerifications)
+      .set({ failedAttempts: sql`failed_attempts + 1` })
+      .where(eq(emailVerifications.id, id))
+      .returning();
+    return v.failedAttempts;
+  }
+
+  async lockVerification(id: number, lockedUntil: Date): Promise<void> {
+    await db.update(emailVerifications).set({ lockedUntil }).where(eq(emailVerifications.id, id));
+  }
+
+  async getRecentVerificationCount(userId: string, sinceMinutes: number): Promise<number> {
+    const since = new Date(Date.now() - sinceMinutes * 60 * 1000);
+    const results = await db.select().from(emailVerifications)
+      .where(and(
+        eq(emailVerifications.userId, userId),
+        gte(emailVerifications.createdAt, since)
+      ));
+    return results.length;
   }
 
   async getHearingsByCase(caseId: number): Promise<CourtHearing[]> {

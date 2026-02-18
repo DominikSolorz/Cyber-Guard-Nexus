@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Mail, RefreshCw } from "lucide-react";
+import { Shield, Mail, RefreshCw, AlertTriangle, Clock } from "lucide-react";
 
 export default function VerifyEmail() {
   const [code, setCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const verifyMutation = useMutation({
     mutationFn: async () => {
@@ -31,12 +40,19 @@ export default function VerifyEmail() {
       await apiRequest("POST", "/api/resend-verification");
     },
     onSuccess: () => {
-      toast({ title: "Kod wyslany ponownie", description: "Sprawdz skrzynke email" });
+      setResendCooldown(60);
+      setCode("");
+      toast({ title: "Kod wyslany ponownie", description: "Sprawdz skrzynke email. Nowy kod wazny 5 minut." });
     },
     onError: (error: any) => {
       toast({ title: "Blad", description: error.message, variant: "destructive" });
     },
   });
+
+  const handleCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setCode(value);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -64,10 +80,12 @@ export default function VerifyEmail() {
               <div>
                 <Input
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={handleCodeChange}
                   placeholder="______"
                   maxLength={6}
                   className="text-center text-2xl tracking-[0.5em] font-mono"
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
                   data-testid="input-verification-code"
                 />
               </div>
@@ -87,18 +105,27 @@ export default function VerifyEmail() {
                   variant="ghost"
                   size="sm"
                   onClick={() => resendMutation.mutate()}
-                  disabled={resendMutation.isPending}
+                  disabled={resendMutation.isPending || resendCooldown > 0}
                   data-testid="button-resend"
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
-                  {resendMutation.isPending ? "Wysylanie..." : "Wyslij ponownie"}
+                  {resendCooldown > 0
+                    ? `Wyslij ponownie (${resendCooldown}s)`
+                    : resendMutation.isPending
+                    ? "Wysylanie..."
+                    : "Wyslij ponownie"}
                 </Button>
               </div>
 
               <div className="bg-muted/50 rounded-md p-3 mt-4">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Kod jest wazny przez 15 minut. Nigdy nie udostepniaj kodu innym osobom. Nikt z zespolu LexVault nie poprosi Cie o ten kod.
-                </p>
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Kod jest wazny przez <strong>5 minut</strong>. Masz <strong>3 proby</strong> wpisania kodu &mdash; po przekroczeniu limitu weryfikacja zostanie zablokowana na 15 minut. Nigdy nie udostepniaj kodu innym osobom.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>

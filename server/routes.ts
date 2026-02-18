@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replit_integrations/auth/replitAuth";
 import { authStorage } from "./replit_integrations/auth/storage";
 import { onboardingSchema, profileUpdateSchema, validateNIP, validatePESEL } from "@shared/schema";
-import { sendVerificationEmail, generateVerificationCode, sendContactNotificationEmail } from "./email";
+import { sendVerificationEmail, generateVerificationCode, hashVerificationCode, verifyCodeHash, sendContactNotificationEmail } from "./email";
 import { contactFormSchema, CASE_CATEGORY_LABELS } from "@shared/schema";
 import multer from "multer";
 import path from "path";
@@ -173,8 +173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.updateUserProfile(userId, updateData);
 
       const code = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-      await storage.createEmailVerification(userId, parsed.email, code, expiresAt);
+      const codeHash = hashVerificationCode(code);
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      await storage.createEmailVerification(userId, parsed.email, codeHash, expiresAt);
 
       const emailSent = await sendVerificationEmail(parsed.email, `${parsed.firstName} ${parsed.lastName}`, code);
       if (!emailSent) {
@@ -201,8 +202,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Kod wygasl lub nie istnieje. Wyslij ponownie." });
       }
 
-      if (verification.code !== code.trim()) {
-        return res.status(400).json({ message: "Nieprawidlowy kod weryfikacyjny" });
+      if (verification.lockedUntil && new Date(verification.lockedUntil) > new Date()) {
+        const minutesLeft = Math.ceil((new Date(verification.lockedUntil).getTime() - Date.now()) / 60000);
+        return res.status(429).json({ message: `Zbyt wiele blednych prob. Sprobuj ponownie za ${minutesLeft} min.` });
+      }
+
+      if (verification.failedAttempts >= 3 && !verification.lockedUntil) {
+        const lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+        await storage.lockVerification(verification.id, lockUntil);
+        return res.status(429).json({ message: "Zbyt wiele blednych prob. Konto zablokowane na 15 minut. Wyslij nowy kod." });
+      }
+
+      const isValid = verifyCodeHash(code.trim(), verification.code);
+      if (!isValid) {
+        const attempts = await storage.incrementFailedAttempts(verification.id);
+        if (attempts >= 3) {
+          const lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+          await storage.lockVerification(verification.id, lockUntil);
+          return res.status(429).json({ message: "Zbyt wiele blednych prob. Konto zablokowane na 15 minut. Wyslij nowy kod." });
+        }
+        const remaining = 3 - attempts;
+        return res.status(400).json({ message: `Nieprawidlowy kod. Pozostalo prob: ${remaining}` });
       }
 
       await storage.markVerificationUsed(verification.id);
@@ -221,9 +241,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Brak adresu email" });
       }
 
+      const recentCount = await storage.getRecentVerificationCount(userId, 15);
+      if (recentCount >= 5) {
+        return res.status(429).json({ message: "Zbyt wiele prosb o kod. Sprobuj ponownie za kilka minut." });
+      }
+
       const code = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-      await storage.createEmailVerification(userId, user.email, code, expiresAt);
+      const codeHash = hashVerificationCode(code);
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      await storage.createEmailVerification(userId, user.email, codeHash, expiresAt);
       const sent = await sendVerificationEmail(user.email, `${user.firstName || ""} ${user.lastName || ""}`, code);
 
       if (!sent) {
