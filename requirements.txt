@@ -1,0 +1,29 @@
+# OpenAI / Chat GPT
+openai
+
+# Backend Framework
+fastapi
+uvicorn
+flask
+
+# HTTP & API
+requests
+httpx
+
+# Web Scraping
+beautifulsoup4
+lxml
+
+# Database
+sqlalchemy
+
+# Email
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+
+# Utilities
+python-dotenv
+pydantic
+pydantic-settings

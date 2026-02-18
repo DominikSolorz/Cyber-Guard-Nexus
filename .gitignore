@@ -10,6 +10,7 @@ server/public
 .env
 .env.local
 .env.*.local
+KLUCZE_API.txt
 
 # OS files
 .DS_Store
@@ -45,6 +46,14 @@ uploads/*
 *.pem
 *.key
 *.cert
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
 
 # Replit specific
 .config/
