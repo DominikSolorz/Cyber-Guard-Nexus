@@ -1,10 +1,11 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, FolderOpen, Search, Lock, FileText, ArrowRight, MessageSquare, Mail } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Shield, Scale, FolderOpen, Search, Lock, FileText, ArrowRight, MessageSquare, Users, Briefcase, Building2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function Landing() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -20,15 +21,12 @@ export default function Landing() {
               </div>
             </Link>
             <div className="flex items-center gap-2">
-              <Link href="/terms">
-                <Button variant="ghost" size="sm" data-testid="link-terms">Regulamin</Button>
-              </Link>
-              <Link href="/privacy">
-                <Button variant="ghost" size="sm" data-testid="link-privacy">RODO</Button>
-              </Link>
-              <Link href="/contact">
-                <Button variant="ghost" size="sm" data-testid="link-contact">Kontakt</Button>
-              </Link>
+              <a href="#o-aplikacji">
+                <Button variant="ghost" size="sm" data-testid="link-about">O aplikacji</Button>
+              </a>
+              <a href="#funkcje">
+                <Button variant="ghost" size="sm" data-testid="link-features">Funkcje</Button>
+              </a>
               {user ? (
                 <Link href="/dashboard">
                   <Button size="sm" data-testid="link-dashboard">Panel</Button>
@@ -47,17 +45,17 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/30 bg-primary/5 text-primary text-sm mb-6">
-            <Lock className="h-3.5 w-3.5" />
-            <span>Bezpieczna biblioteka spraw sadowych</span>
+            <Scale className="h-3.5 w-3.5" />
+            <span>Profesjonalny system dla prawnikow</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6">
-            Twoje sprawy sadowe
+            Zarzadzaj kancelaria
             <br />
             <span className="text-primary">w jednym miejscu</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            LexVault to profesjonalny system zarzadzania dokumentami prawnymi.
-            Organizuj, przechowuj i przeszukuj swoje akta z pelnym bezpieczenstwem.
+            LexVault to profesjonalna platforma dla adwokatow, radcow prawnych i ich klientow.
+            Komunikacja, dokumenty i sprawy sadowe - wszystko bezpiecznie w jednym systemie.
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             {user ? (
@@ -79,45 +77,34 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-20 px-4 border-t border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Wszystko, czego potrzebujesz</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Kompletny system do zarzadzania dokumentacja prawna
-            </p>
+      <section id="o-aplikacji" className="py-20 px-4 border-t border-border">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">Dla kogo jest LexVault?</h2>
+          <p className="text-muted-foreground text-center max-w-xl mx-auto mb-12">
+            Platforma laczaca prawnikow z klientami w bezpiecznym srodowisku
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <RoleCard icon={<Scale className="h-6 w-6" />} title="Adwokaci" desc="Zarzadzanie klientami, sprawami i dokumentacja w jednym miejscu." />
+            <RoleCard icon={<Briefcase className="h-6 w-6" />} title="Radcy prawni" desc="Komunikacja z klientami i obieg dokumentow online." />
+            <RoleCard icon={<Users className="h-6 w-6" />} title="Klienci indywidualni" desc="Bezposredni kontakt z adwokatem i podglad dokumentow sprawy." />
+            <RoleCard icon={<Building2 className="h-6 w-6" />} title="Firmy" desc="Obsluga prawna firmy z pelnym dostepem do dokumentacji." />
           </div>
+        </div>
+      </section>
+
+      <section id="funkcje" className="py-20 px-4 border-t border-border">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">Funkcje systemu</h2>
+          <p className="text-muted-foreground text-center max-w-xl mx-auto mb-12">
+            Kompletny zestaw narzedzi do prowadzenia spraw prawnych
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FeatureCard
-              icon={<FolderOpen className="h-6 w-6" />}
-              title="Organizacja spraw"
-              description="Tworzenie folderow i podfolderow dla kazdej sprawy. Pelna kontrola nad struktura dokumentow."
-            />
-            <FeatureCard
-              icon={<FileText className="h-6 w-6" />}
-              title="Zarzadzanie plikami"
-              description="Dodawanie plikow PDF, JPG, PNG i DOCX. Podglad dokumentow bezposrednio w przegladarce."
-            />
-            <FeatureCard
-              icon={<Search className="h-6 w-6" />}
-              title="Szybkie wyszukiwanie"
-              description="Wyszukiwanie dokumentow po nazwie i sygnaturze. Natychmiastowe wyniki wyszukiwania."
-            />
-            <FeatureCard
-              icon={<Lock className="h-6 w-6" />}
-              title="Bezpieczenstwo"
-              description="Logowanie przez Google, GitHub, Apple lub email. Ochrona danych zgodna z RODO."
-            />
-            <FeatureCard
-              icon={<MessageSquare className="h-6 w-6" />}
-              title="Asystent AI"
-              description="Wbudowany czat z ChatGPT. Pomoc w analizie dokumentow i sprawach prawnych."
-            />
-            <FeatureCard
-              icon={<Shield className="h-6 w-6" />}
-              title="Prywatnosc"
-              description="Kazdy uzytkownik widzi wylacznie swoje dokumenty. Pelna izolacja danych."
-            />
+            <FeatureCard icon={<MessageSquare className="h-6 w-6" />} title="Czat prawnik-klient" description="Bezposrednia komunikacja miedzy prawnikiem a klientem z mozliwoscia zalaczania plikow PDF." />
+            <FeatureCard icon={<FolderOpen className="h-6 w-6" />} title="Zarzadzanie sprawami" description="Tworzenie spraw, przypisywanie klientow i pelna kontrola nad dokumentacja." />
+            <FeatureCard icon={<FileText className="h-6 w-6" />} title="Obieg dokumentow" description="Wysylanie i odbieranie plikow PDF, JPG, PNG i DOCX z podgladem w przegladarce." />
+            <FeatureCard icon={<Search className="h-6 w-6" />} title="Wyszukiwanie" description="Szybkie wyszukiwanie spraw, dokumentow i klientow po nazwie lub sygnaturze." />
+            <FeatureCard icon={<Lock className="h-6 w-6" />} title="Bezpieczenstwo" description="Logowanie przez Google, GitHub, Apple lub email. Dane chronione zgodnie z RODO." />
+            <FeatureCard icon={<Shield className="h-6 w-6" />} title="Asystent AI" description="Wbudowany asystent ChatGPT pomagajacy w analizie prawnej i przygotowaniu pism." />
           </div>
         </div>
       </section>
@@ -148,14 +135,30 @@ export default function Landing() {
   );
 }
 
+function RoleCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <Card className="hover-elevate" data-testid={`card-role-${title.toLowerCase()}`}>
+      <CardContent className="p-5 text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-primary/10 text-primary mb-3">
+          {icon}
+        </div>
+        <h3 className="font-semibold mb-1">{title}</h3>
+        <p className="text-sm text-muted-foreground">{desc}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="rounded-md border border-border bg-card p-6 hover-elevate transition-colors" data-testid={`card-feature-${title.toLowerCase().replace(/\s+/g, '-')}`}>
-      <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary mb-4">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </div>
+    <Card className="hover-elevate" data-testid={`card-feature-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary mb-4">
+          {icon}
+        </div>
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      </CardContent>
+    </Card>
   );
 }

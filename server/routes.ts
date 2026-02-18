@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replit_integrations/auth/replitAuth";
 import { authStorage } from "./replit_integrations/auth/storage";
+import { onboardingSchema } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -59,6 +60,20 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+async function requireLawyer(req: Request, res: Response, next: NextFunction) {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ message: "Nie zalogowany" });
+  const user = await storage.getUserById(userId);
+  if (!user || (user.role !== "adwokat" && user.role !== "radca_prawny")) {
+    return res.status(403).json({ message: "Dostep tylko dla prawnikow" });
+  }
+  next();
+}
+
+function isLawyerRole(role: string | null): boolean {
+  return role === "adwokat" || role === "radca_prawny";
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -70,6 +85,313 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   });
 
+  app.post("/api/onboarding", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const parsed = onboardingSchema.parse(req.body);
+      const updateData: any = {
+        role: parsed.role,
+        firstName: parsed.firstName,
+        lastName: parsed.lastName,
+        phone: parsed.phone || null,
+        onboardingCompleted: true,
+      };
+
+      if (parsed.role === "adwokat" || parsed.role === "radca_prawny") {
+        updateData.barNumber = parsed.barNumber || null;
+        updateData.lawyerType = parsed.role;
+      }
+
+      if (parsed.role === "klient") {
+        updateData.pesel = parsed.pesel || null;
+        updateData.address = parsed.address || null;
+        updateData.city = parsed.city || null;
+        updateData.postalCode = parsed.postalCode || null;
+      }
+
+      if (parsed.role === "firma") {
+        updateData.companyName = parsed.companyName || null;
+        updateData.nip = parsed.nip || null;
+        updateData.address = parsed.address || null;
+        updateData.city = parsed.city || null;
+        updateData.postalCode = parsed.postalCode || null;
+      }
+
+      const user = await storage.updateUserProfile(userId, updateData);
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/clients", isAuthenticated, requireLawyer, async (req, res) => {
+    const result = await storage.getClientRecordsByLawyer(getUserId(req));
+    res.json(result);
+  });
+
+  app.post("/api/clients", isAuthenticated, requireLawyer, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { firstName, lastName, pesel, email, phone, address, city, postalCode, notes } = req.body;
+      if (!firstName || !lastName) return res.status(400).json({ message: "Imie i nazwisko sa wymagane" });
+
+      let linkedUserId = null;
+      if (email) {
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) linkedUserId = existingUser.id;
+      }
+
+      const record = await storage.createClientRecord({
+        lawyerId: userId,
+        userId: linkedUserId,
+        firstName, lastName, pesel: pesel || null, email: email || null,
+        phone: phone || null, address: address || null, city: city || null,
+        postalCode: postalCode || null, notes: notes || null,
+      });
+      res.status(201).json(record);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/clients/:id", isAuthenticated, requireLawyer, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const record = await storage.updateClientRecord(id, getUserId(req), req.body);
+    if (!record) return res.status(404).json({ message: "Klient nie znaleziony" });
+    res.json(record);
+  });
+
+  app.delete("/api/clients/:id", isAuthenticated, requireLawyer, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteClientRecord(id, getUserId(req));
+    if (!deleted) return res.status(404).json({ message: "Klient nie znaleziony" });
+    res.json({ message: "Klient usuniety" });
+  });
+
+  app.get("/api/cases", isAuthenticated, async (req, res) => {
+    const userId = getUserId(req);
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(401).json({ message: "Nie zalogowany" });
+
+    if (isLawyerRole(user.role)) {
+      const result = await storage.getCasesByLawyer(userId);
+      res.json(result);
+    } else {
+      const result = await storage.getCasesByClient(userId);
+      res.json(result);
+    }
+  });
+
+  app.get("/api/cases/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const userId = getUserId(req);
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(401).json({ message: "Nie zalogowany" });
+
+    const c = await storage.getCaseById(id);
+    if (!c) return res.status(404).json({ message: "Sprawa nie znaleziona" });
+
+    if (isLawyerRole(user.role) && c.lawyerId === userId) {
+      return res.json(c);
+    }
+
+    if (c.clientRecordId) {
+      const records = await storage.getClientRecordsByLawyer(c.lawyerId);
+      const record = records.find(r => r.id === c.clientRecordId && r.userId === userId);
+      if (record) return res.json(c);
+    }
+
+    return res.status(403).json({ message: "Brak dostepu" });
+  });
+
+  app.post("/api/cases", isAuthenticated, requireLawyer, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { title, caseNumber, description, clientRecordId } = req.body;
+      if (!title) return res.status(400).json({ message: "Tytul sprawy jest wymagany" });
+
+      const c = await storage.createCase({
+        lawyerId: userId,
+        clientRecordId: clientRecordId || null,
+        title,
+        caseNumber: caseNumber || null,
+        description: description || null,
+        status: "active",
+      });
+      res.status(201).json(c);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/cases/:id", isAuthenticated, requireLawyer, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const c = await storage.getCaseById(id);
+    if (!c || c.lawyerId !== getUserId(req)) return res.status(404).json({ message: "Sprawa nie znaleziona" });
+    const updated = await storage.updateCase(id, req.body);
+    res.json(updated);
+  });
+
+  app.delete("/api/cases/:id", isAuthenticated, requireLawyer, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteCase(id, getUserId(req));
+    if (!deleted) return res.status(404).json({ message: "Sprawa nie znaleziona" });
+    res.json({ message: "Sprawa usunieta" });
+  });
+
+  app.get("/api/cases/:id/messages", isAuthenticated, async (req, res) => {
+    const caseId = parseInt(req.params.id);
+    const userId = getUserId(req);
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(401).json({ message: "Nie zalogowany" });
+
+    const c = await storage.getCaseById(caseId);
+    if (!c) return res.status(404).json({ message: "Sprawa nie znaleziona" });
+
+    if (isLawyerRole(user.role) && c.lawyerId !== userId) {
+      return res.status(403).json({ message: "Brak dostepu" });
+    }
+
+    const msgs = await storage.getDirectMessages(caseId);
+    const withAttachments = await Promise.all(
+      msgs.map(async (msg) => {
+        const attachments = await storage.getMessageAttachments(msg.id);
+        return { ...msg, attachments };
+      })
+    );
+    res.json(withAttachments);
+  });
+
+  app.post("/api/cases/:id/messages", isAuthenticated, async (req, res) => {
+    try {
+      const caseId = parseInt(req.params.id);
+      const userId = getUserId(req);
+      const { content } = req.body;
+
+      if (!content?.trim()) return res.status(400).json({ message: "Tresc jest wymagana" });
+
+      const c = await storage.getCaseById(caseId);
+      if (!c) return res.status(404).json({ message: "Sprawa nie znaleziona" });
+
+      let recipientId = c.lawyerId;
+      if (userId === c.lawyerId && c.clientRecordId) {
+        const clientRecord = await storage.getClientRecordById(c.clientRecordId, c.lawyerId);
+        if (clientRecord?.userId) recipientId = clientRecord.userId;
+      }
+
+      const msg = await storage.createDirectMessage({
+        caseId,
+        senderId: userId,
+        recipientId,
+        content: content.trim(),
+      });
+      res.status(201).json(msg);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/cases/:id/messages/upload", isAuthenticated, (req, res) => {
+    upload.single("file")(req, res, async (err) => {
+      if (err) return res.status(400).json({ message: err.message });
+      if (!req.file) return res.status(400).json({ message: "Brak pliku" });
+
+      const caseId = parseInt(req.params.id);
+      const userId = getUserId(req);
+      const { content } = req.body;
+
+      try {
+        const c = await storage.getCaseById(caseId);
+        if (!c) {
+          fs.unlinkSync(req.file.path);
+          return res.status(404).json({ message: "Sprawa nie znaleziona" });
+        }
+
+        let recipientId = c.lawyerId;
+        if (userId === c.lawyerId && c.clientRecordId) {
+          const clientRecord = await storage.getClientRecordById(c.clientRecordId, c.lawyerId);
+          if (clientRecord?.userId) recipientId = clientRecord.userId;
+        }
+
+        const file = await storage.createFile({
+          userId,
+          caseId,
+          name: req.file.originalname,
+          path: req.file.path,
+          type: req.file.mimetype,
+          size: req.file.size,
+        });
+
+        const msg = await storage.createDirectMessage({
+          caseId,
+          senderId: userId,
+          recipientId,
+          content: content || `Zalaczono plik: ${req.file.originalname}`,
+        });
+
+        const attachment = await storage.createMessageAttachment({
+          messageId: msg.id,
+          fileId: file.id,
+          fileName: req.file.originalname,
+          filePath: req.file.path,
+          fileType: req.file.mimetype,
+          fileSize: req.file.size,
+        });
+
+        res.status(201).json({ message: msg, attachment });
+      } catch (error: any) {
+        fs.unlinkSync(req.file.path);
+        res.status(500).json({ message: error.message });
+      }
+    });
+  });
+
+  app.patch("/api/messages/:id", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const userId = getUserId(req);
+    const { content } = req.body;
+    if (!content?.trim()) return res.status(400).json({ message: "Tresc jest wymagana" });
+
+    const msg = await storage.updateDirectMessage(id, userId, content.trim());
+    if (!msg) return res.status(404).json({ message: "Wiadomosc nie znaleziona lub brak uprawnien" });
+    res.json(msg);
+  });
+
+  app.get("/api/attachments/:id/download", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const userId = getUserId(req);
+    const user = await storage.getUserById(userId);
+    if (!user) return res.status(401).json({ message: "Nie zalogowany" });
+
+    const file = await storage.getFileByIdAny(id);
+    if (!file) return res.status(404).json({ message: "Plik nie znaleziony" });
+
+    if (file.userId === userId) {
+      // owner
+    } else if (file.caseId) {
+      const c = await storage.getCaseById(file.caseId);
+      if (!c) return res.status(403).json({ message: "Brak dostepu" });
+      if (c.lawyerId === userId) {
+        // lawyer on case
+      } else if (c.clientRecordId) {
+        const clientRecord = await storage.getClientRecordById(c.clientRecordId, c.lawyerId);
+        if (!clientRecord || clientRecord.userId !== userId) {
+          return res.status(403).json({ message: "Brak dostepu" });
+        }
+      } else {
+        return res.status(403).json({ message: "Brak dostepu" });
+      }
+    } else {
+      return res.status(403).json({ message: "Brak dostepu" });
+    }
+
+    if (!fs.existsSync(file.path)) return res.status(404).json({ message: "Plik nie istnieje na dysku" });
+    res.setHeader("Content-Type", file.type);
+    res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(file.name)}"`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    fs.createReadStream(file.path).pipe(res);
+  });
+
   app.get("/api/folders", isAuthenticated, async (req, res) => {
     const result = await storage.getFoldersByUser(getUserId(req));
     res.json(result);
@@ -78,21 +400,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/folders", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
-      const { name, parentFolderId } = req.body;
-      if (!name || !name.trim()) {
-        return res.status(400).json({ message: "Nazwa folderu jest wymagana" });
-      }
+      const { name, parentFolderId, caseId } = req.body;
+      if (!name || !name.trim()) return res.status(400).json({ message: "Nazwa folderu jest wymagana" });
       if (parentFolderId) {
         const parent = await storage.getFolderById(parentFolderId, userId);
-        if (!parent) {
-          return res.status(404).json({ message: "Folder nadrzedny nie znaleziony" });
-        }
+        if (!parent) return res.status(404).json({ message: "Folder nadrzedny nie znaleziony" });
       }
-      const folder = await storage.createFolder({
-        userId,
-        name: name.trim(),
-        parentFolderId: parentFolderId || null,
-      });
+      const folder = await storage.createFolder({ userId, name: name.trim(), parentFolderId: parentFolderId || null, caseId: caseId || null });
       res.status(201).json(folder);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -102,9 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/folders/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const { name } = req.body;
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: "Nazwa jest wymagana" });
-    }
+    if (!name || !name.trim()) return res.status(400).json({ message: "Nazwa jest wymagana" });
     const folder = await storage.updateFolder(id, getUserId(req), name.trim());
     if (!folder) return res.status(404).json({ message: "Folder nie znaleziony" });
     res.json(folder);
@@ -125,27 +437,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/files/upload", isAuthenticated, (req, res) => {
     upload.single("file")(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ message: err.message });
-      }
-      if (!req.file) {
-        return res.status(400).json({ message: "Brak pliku" });
-      }
+      if (err) return res.status(400).json({ message: err.message });
+      if (!req.file) return res.status(400).json({ message: "Brak pliku" });
       const userId = getUserId(req);
-      const folderId = parseInt(req.body.folderId);
-      if (!folderId) {
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ message: "Folder jest wymagany" });
+      const folderId = req.body.folderId ? parseInt(req.body.folderId) : null;
+      const caseId = req.body.caseId ? parseInt(req.body.caseId) : null;
+
+      if (folderId) {
+        const folder = await storage.getFolderById(folderId, userId);
+        if (!folder) {
+          fs.unlinkSync(req.file.path);
+          return res.status(404).json({ message: "Folder nie znaleziony" });
+        }
       }
-      const folder = await storage.getFolderById(folderId, userId);
-      if (!folder) {
-        fs.unlinkSync(req.file.path);
-        return res.status(404).json({ message: "Folder nie znaleziony" });
-      }
+
       try {
         const file = await storage.createFile({
-          userId,
-          folderId,
+          userId, folderId, caseId,
           name: req.file.originalname,
           path: req.file.path,
           type: req.file.mimetype,
@@ -163,9 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const id = parseInt(req.params.id);
     const file = await storage.getFileById(id, getUserId(req));
     if (!file) return res.status(404).json({ message: "Plik nie znaleziony" });
-    if (!fs.existsSync(file.path)) {
-      return res.status(404).json({ message: "Plik nie istnieje na dysku" });
-    }
+    if (!fs.existsSync(file.path)) return res.status(404).json({ message: "Plik nie istnieje na dysku" });
     res.setHeader("Content-Type", file.type);
     res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(file.name)}"`);
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -175,9 +481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/files/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     const { name } = req.body;
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: "Nazwa jest wymagana" });
-    }
+    if (!name || !name.trim()) return res.status(400).json({ message: "Nazwa jest wymagana" });
     const file = await storage.updateFileName(id, getUserId(req), name.trim());
     if (!file) return res.status(404).json({ message: "Plik nie znaleziony" });
     res.json(file);
@@ -187,9 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const id = parseInt(req.params.id);
     const file = await storage.deleteFile(id, getUserId(req));
     if (!file) return res.status(404).json({ message: "Plik nie znaleziony" });
-    if (fs.existsSync(file.path)) {
-      fs.unlinkSync(file.path);
-    }
+    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
     res.json({ message: "Plik usuniety" });
   });
 
@@ -244,32 +546,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const systemMessage = {
         role: "system" as const,
-        content: "Jestes asystentem prawnym LexVault. Pomagasz uzytkownikom w sprawach prawnych, analizie dokumentow i organizacji spraw. Odpowiadaj po polsku, zwiezle i profesjonalnie.",
+        content: `Jestes zaawansowanym asystentem prawnym LexVault z dostepem do wiedzy prawnej i przegladania internetu.
+Pomagasz uzytkownikom w sprawach prawnych, analizie dokumentow i organizacji spraw.
+Odpowiadaj po polsku, zwiezle i profesjonalnie.
+Mozesz wyjasnic przepisy prawa, pomoc w przygotowaniu pism procesowych i udzielic porad prawnych ogolnych.
+Podawaj zrodla prawne (ustawy, artykuly) gdy to mozliwe.
+Masz dostep do narzedzia web_search ktore pozwala Ci przeszukiwac internet w celu znalezienia aktualnych informacji prawnych, orzeczen sadowych, zmian w przepisach i aktualnosci prawnych. Uzywaj go gdy pytanie dotyczy aktualnych przepisow, orzeczen lub informacji ktore moga sie zmieniac.`,
       };
+
+      const tools: any[] = [
+        {
+          type: "function",
+          function: {
+            name: "web_search",
+            description: "Przeszukaj internet w celu znalezienia aktualnych informacji prawnych, orzeczen, przepisow i aktualnosci. Uzywaj dla pytan o aktualne przepisy, nowelizacje ustaw, orzeczenia sadowe.",
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "Zapytanie do wyszukiwania w internecie (po polsku lub angielsku)",
+                },
+              },
+              required: ["query"],
+            },
+          },
+        },
+      ];
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const stream = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [systemMessage, ...chatMessages],
-        stream: true,
-        max_tokens: 4096,
-      });
-
       let fullResponse = "";
+      let currentMessages: any[] = [systemMessage, ...chatMessages];
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          fullResponse += content;
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      const maxToolRounds = 3;
+      for (let round = 0; round < maxToolRounds; round++) {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: currentMessages,
+          tools,
+          tool_choice: round === 0 ? "auto" : "auto",
+          stream: false,
+          max_tokens: 4096,
+        });
+
+        const choice = response.choices[0];
+        if (!choice) break;
+
+        if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
+          currentMessages.push(choice.message);
+
+          for (const toolCall of choice.message.tool_calls) {
+            if (toolCall.function.name === "web_search") {
+              const args = JSON.parse(toolCall.function.arguments);
+              res.write(`data: ${JSON.stringify({ content: `\n\n_Szukam w internecie: "${args.query}"..._\n\n` })}\n\n`);
+              fullResponse += `\n\n_Szukam w internecie: "${args.query}"..._\n\n`;
+
+              let searchResult = "Brak wynikow wyszukiwania.";
+              try {
+                const searchResponse = await fetch(
+                  `https://api.duckduckgo.com/?q=${encodeURIComponent(args.query)}&format=json&no_html=1&skip_disambig=1`
+                );
+                if (searchResponse.ok) {
+                  const data = await searchResponse.json();
+                  const results: string[] = [];
+                  if (data.AbstractText) results.push(`Podsumowanie: ${data.AbstractText}\nZrodlo: ${data.AbstractURL}`);
+                  if (data.RelatedTopics) {
+                    for (const topic of data.RelatedTopics.slice(0, 5)) {
+                      if (topic.Text) results.push(`- ${topic.Text}${topic.FirstURL ? ` (${topic.FirstURL})` : ""}`);
+                    }
+                  }
+                  if (results.length > 0) searchResult = results.join("\n");
+                }
+              } catch (e) {
+                searchResult = "Blad wyszukiwania - sprobuj ponownie.";
+              }
+
+              currentMessages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: searchResult,
+              });
+            }
+          }
+          continue;
         }
+
+        if (choice.message.content) {
+          const text = choice.message.content;
+          const chunkSize = 20;
+          for (let i = 0; i < text.length; i += chunkSize) {
+            const chunk = text.slice(i, i + chunkSize);
+            fullResponse += chunk;
+            res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+          }
+        }
+        break;
       }
 
       await storage.createMessage(conversationId, "assistant", fullResponse);
-
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
     } catch (error: any) {
