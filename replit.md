@@ -21,7 +21,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 ## Admin Access
 - Owner-only admin: goldservicepoland@gmail.com is automatically set as admin on login
 - Admin toggle removed from UI - only the owner email gets admin privileges
-- Admin can view all users, delete accounts
+- Admin can view all users, delete accounts, manage contact submissions
 
 ## Case Categories (Polish Legal System)
 - `cywilne` - Sprawy cywilne (civil: debt, damages, property, inheritance, contracts, eviction)
@@ -47,6 +47,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `messages`: id (serial PK), conversationId (FK->conversations), role, content, createdAt - AI chat messages
 - `email_verifications`: id (serial PK), userId (FK->users), email, code, expiresAt, usedAt, createdAt - Email 2FA codes
 - `court_hearings`: id (serial PK), caseId (FK->cases), lawyerId (FK->users), title, description, courtName, courtRoom, startsAt, endsAt, createdAt
+- `contact_submissions`: id (serial PK), firstName, lastName, email, phone, senderType, category, caseCategory, subject, description, attachmentName, attachmentPath, attachmentType, attachmentSize, priority, status, adminNotes, createdAt, updatedAt
 
 ## Key Routes
 - `/` - Landing page (public) - comprehensive with hero, features, security, how-it-works sections
@@ -58,7 +59,7 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `/calendar` - Court hearing calendar with month/week views (protected)
 - `/profile` - Profile settings - view/edit personal data (protected)
 - `/admin` - Admin user management (protected, owner-only)
-- `/contact` - Contact information
+- `/contact` - Advanced contact form with categories, file upload, email notification
 - `/terms` - Terms of service (comprehensive, 2026)
 - `/privacy` - Privacy policy / RODO (comprehensive, 2026)
 - `/confidentiality` - Klauzula poufnosci (confidentiality clause)
@@ -93,6 +94,11 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - `POST /api/hearings` - Create hearing (lawyer only)
 - `PATCH /api/hearings/:id` - Update hearing (lawyer only)
 - `DELETE /api/hearings/:id` - Delete hearing (lawyer only)
+- `POST /api/contact` - Submit contact form (public, with file upload)
+- `GET /api/admin/contact-submissions` - List all contact submissions (admin only)
+- `GET /api/admin/contact-submissions/:id` - Get single submission (admin only)
+- `PATCH /api/admin/contact-submissions/:id` - Update status/notes (admin only)
+- `GET /api/admin/contact-submissions/:id/attachment` - Download attachment (admin only)
 - `GET/DELETE /api/admin/users` - Admin user management (owner-only)
 
 ## Security
@@ -125,3 +131,4 @@ Email: goldservicepoland@gmail.com
 - Owner-only admin system (goldservicepoland@gmail.com whitelisted, admin toggle removed)
 - Advanced AI Chat with GPT-4o model, comprehensive Polish law system prompt covering all case categories
 - AI legal disclaimer in chat responses
+- Advanced contact form with 9 categories (login help, password reset, account deletion, account recovery, cooperation, technical, legal, complaint, other), sender type selection, case category for legal questions, file attachment, priority levels, email notification to owner via SendGrid

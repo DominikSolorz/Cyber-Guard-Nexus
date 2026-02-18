@@ -148,6 +148,92 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
+export const contactSubmissions = pgTable("contact_submissions", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone"),
+  senderType: varchar("sender_type").notNull(),
+  category: varchar("category").notNull(),
+  caseCategory: varchar("case_category"),
+  subject: varchar("subject").notNull(),
+  description: text("description").notNull(),
+  attachmentName: text("attachment_name"),
+  attachmentPath: text("attachment_path"),
+  attachmentType: text("attachment_type"),
+  attachmentSize: integer("attachment_size"),
+  priority: varchar("priority").default("sredni").notNull(),
+  status: varchar("status").default("nowe").notNull(),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const CONTACT_CATEGORIES = [
+  "pomoc_logowanie", "reset_hasla", "usuniecie_konta", "odzyskanie_konta",
+  "wspolpraca", "problem_techniczny", "pytanie_prawne", "reklamacja", "inne",
+] as const;
+
+export const CONTACT_CATEGORY_LABELS: Record<string, string> = {
+  "pomoc_logowanie": "Pomoc z logowaniem",
+  "reset_hasla": "Reset hasla",
+  "usuniecie_konta": "Usuniecie konta",
+  "odzyskanie_konta": "Odzyskanie konta",
+  "wspolpraca": "Wspolpraca",
+  "problem_techniczny": "Problem techniczny",
+  "pytanie_prawne": "Pytanie prawne",
+  "reklamacja": "Reklamacja",
+  "inne": "Inne",
+};
+
+export const SENDER_TYPES = [
+  "klient_indywidualny", "firma", "kancelaria", "inne",
+] as const;
+
+export const SENDER_TYPE_LABELS: Record<string, string> = {
+  "klient_indywidualny": "Klient indywidualny",
+  "firma": "Firma / Przedsiebiorstwo",
+  "kancelaria": "Kancelaria prawna",
+  "inne": "Inne",
+};
+
+export const CONTACT_PRIORITIES = ["niski", "sredni", "wysoki", "pilny"] as const;
+
+export const CONTACT_PRIORITY_LABELS: Record<string, string> = {
+  "niski": "Niski",
+  "sredni": "Sredni",
+  "wysoki": "Wysoki",
+  "pilny": "Pilny",
+};
+
+export const CONTACT_STATUSES = ["nowe", "w_trakcie", "oczekujace", "zamkniete"] as const;
+
+export const CONTACT_STATUS_LABELS: Record<string, string> = {
+  "nowe": "Nowe",
+  "w_trakcie": "W trakcie realizacji",
+  "oczekujace": "Oczekujace na odpowiedz",
+  "zamkniete": "Zamkniete",
+};
+
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({
+  id: true, createdAt: true, updatedAt: true, status: true, adminNotes: true,
+  attachmentName: true, attachmentPath: true, attachmentType: true, attachmentSize: true,
+});
+
+export const contactFormSchema = z.object({
+  firstName: z.string().min(2, "Imie musi miec min. 2 znaki"),
+  lastName: z.string().min(2, "Nazwisko musi miec min. 2 znaki"),
+  email: z.string().email("Nieprawidlowy adres email"),
+  phone: z.string().optional(),
+  senderType: z.enum(["klient_indywidualny", "firma", "kancelaria", "inne"]),
+  category: z.enum(["pomoc_logowanie", "reset_hasla", "usuniecie_konta", "odzyskanie_konta", "wspolpraca", "problem_techniczny", "pytanie_prawne", "reklamacja", "inne"]),
+  caseCategory: z.string().optional(),
+  subject: z.string().min(5, "Temat musi miec min. 5 znakow"),
+  description: z.string().min(20, "Opis musi miec min. 20 znakow"),
+  priority: z.enum(["niski", "sredni", "wysoki", "pilny"]).default("sredni"),
+});
+
 export const insertFolderSchema = createInsertSchema(folders).omit({ id: true, createdAt: true });
 export const insertFileSchema = createInsertSchema(files).omit({ id: true, createdAt: true });
 export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true });
@@ -315,3 +401,5 @@ export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSche
 export type CourtHearing = typeof courtHearings.$inferSelect;
 export type InsertCourtHearing = z.infer<typeof insertCourtHearingSchema>;
 export type EmailVerification = typeof emailVerifications.$inferSelect;
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;

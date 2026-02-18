@@ -159,4 +159,109 @@ export async function sendVerificationEmail(toEmail: string, userName: string, c
   }
 }
 
+export async function sendContactNotificationEmail(submission: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  senderType: string;
+  category: string;
+  caseCategory?: string | null;
+  subject: string;
+  description: string;
+  priority: string;
+  attachmentName?: string | null;
+}): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableSendGridClient();
+
+    const senderTypeLabels: Record<string, string> = {
+      "klient_indywidualny": "Klient indywidualny",
+      "firma": "Firma",
+      "kancelaria": "Kancelaria prawna",
+      "inne": "Inne",
+    };
+    const categoryLabels: Record<string, string> = {
+      "pomoc_logowanie": "Pomoc z logowaniem",
+      "reset_hasla": "Reset hasla",
+      "usuniecie_konta": "Usuniecie konta",
+      "odzyskanie_konta": "Odzyskanie konta",
+      "wspolpraca": "Wspolpraca",
+      "problem_techniczny": "Problem techniczny",
+      "pytanie_prawne": "Pytanie prawne",
+      "reklamacja": "Reklamacja",
+      "inne": "Inne",
+    };
+    const priorityLabels: Record<string, string> = {
+      "niski": "Niski",
+      "sredni": "Sredni",
+      "wysoki": "Wysoki",
+      "pilny": "PILNY",
+    };
+
+    const priorityColor = submission.priority === "pilny" ? "#dc2626" : submission.priority === "wysoki" ? "#f59e0b" : "#22c55e";
+
+    const html = `
+<!DOCTYPE html>
+<html lang="pl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background-color:#141414;border-radius:12px;border:1px solid #262626;overflow:hidden;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);padding:24px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Nowe zgloszenie kontaktowe</h1>
+              <p style="margin:4px 0 0;font-size:12px;color:#fca5a5;text-transform:uppercase;letter-spacing:2px;">LexVault</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 40px;">
+              <div style="display:inline-block;padding:4px 12px;border-radius:4px;background-color:${priorityColor};color:#fff;font-size:12px;font-weight:600;margin-bottom:16px;">
+                Priorytet: ${priorityLabels[submission.priority] || submission.priority}
+              </div>
+              <h2 style="margin:12px 0 8px;font-size:18px;color:#f5f5f5;">${submission.subject}</h2>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+                <tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;width:140px;">Nadawca:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${submission.firstName} ${submission.lastName}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;">Email:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${submission.email}</td></tr>
+                ${submission.phone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;">Telefon:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${submission.phone}</td></tr>` : ''}
+                <tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;">Typ nadawcy:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${senderTypeLabels[submission.senderType] || submission.senderType}</td></tr>
+                <tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;">Kategoria:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${categoryLabels[submission.category] || submission.category}</td></tr>
+                ${submission.caseCategory ? `<tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;">Rodzaj sprawy:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${submission.caseCategory}</td></tr>` : ''}
+                ${submission.attachmentName ? `<tr><td style="padding:8px 0;border-bottom:1px solid #262626;color:#a3a3a3;font-size:13px;">Zalacznik:</td><td style="padding:8px 0;border-bottom:1px solid #262626;color:#f5f5f5;font-size:13px;">${submission.attachmentName}</td></tr>` : ''}
+              </table>
+              <div style="background-color:#1a1a1a;border-radius:8px;padding:16px;margin-top:16px;">
+                <p style="margin:0 0 8px;font-size:12px;color:#a3a3a3;text-transform:uppercase;letter-spacing:1px;">Opis zgloszenia:</p>
+                <p style="margin:0;font-size:14px;color:#d4d4d4;line-height:1.6;white-space:pre-wrap;">${submission.description}</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#0f0f0f;padding:20px 40px;border-top:1px solid #262626;">
+              <p style="margin:0;font-size:11px;color:#525252;">Ta wiadomosc zostala wyslana automatycznie z formularza kontaktowego LexVault.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const msg = {
+      to: 'goldservicepoland@gmail.com',
+      from: { email: fromEmail, name: 'LexVault Kontakt' },
+      subject: `[LexVault] ${priorityLabels[submission.priority] || ''} - ${submission.subject}`,
+      html,
+    };
+
+    await client.send(msg);
+    return true;
+  } catch (error: any) {
+    console.error('SendGrid contact notification error:', error?.response?.body || error.message);
+    return false;
+  }
+}
+
 export { generateVerificationCode };

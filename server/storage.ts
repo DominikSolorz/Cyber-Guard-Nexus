@@ -3,10 +3,10 @@ import { db } from "./db";
 import {
   users, folders, files, conversations, messages,
   clientRecords, cases, directMessages, messageAttachments,
-  emailVerifications, courtHearings,
+  emailVerifications, courtHearings, contactSubmissions,
   type User, type Folder, type File, type Conversation, type Message,
   type ClientRecord, type Case, type DirectMessage, type MessageAttachment,
-  type EmailVerification, type CourtHearing
+  type EmailVerification, type CourtHearing, type ContactSubmission
 } from "@shared/schema";
 
 export interface IStorage {
@@ -70,6 +70,11 @@ export interface IStorage {
   createHearing(data: Omit<CourtHearing, "id" | "createdAt">): Promise<CourtHearing>;
   updateHearing(id: number, lawyerId: string, data: Partial<CourtHearing>): Promise<CourtHearing | undefined>;
   deleteHearing(id: number, lawyerId: string): Promise<boolean>;
+
+  createContactSubmission(data: Omit<ContactSubmission, "id" | "createdAt" | "updatedAt" | "status" | "adminNotes">): Promise<ContactSubmission>;
+  getAllContactSubmissions(): Promise<ContactSubmission[]>;
+  getContactSubmissionById(id: number): Promise<ContactSubmission | undefined>;
+  updateContactSubmission(id: number, data: Partial<ContactSubmission>): Promise<ContactSubmission | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -334,6 +339,25 @@ export class DatabaseStorage implements IStorage {
   async deleteHearing(id: number, lawyerId: string): Promise<boolean> {
     const result = await db.delete(courtHearings).where(and(eq(courtHearings.id, id), eq(courtHearings.lawyerId, lawyerId))).returning();
     return result.length > 0;
+  }
+
+  async createContactSubmission(data: Omit<ContactSubmission, "id" | "createdAt" | "updatedAt" | "status" | "adminNotes">): Promise<ContactSubmission> {
+    const [sub] = await db.insert(contactSubmissions).values(data).returning();
+    return sub;
+  }
+
+  async getAllContactSubmissions(): Promise<ContactSubmission[]> {
+    return db.select().from(contactSubmissions).orderBy(desc(contactSubmissions.createdAt));
+  }
+
+  async getContactSubmissionById(id: number): Promise<ContactSubmission | undefined> {
+    const [sub] = await db.select().from(contactSubmissions).where(eq(contactSubmissions.id, id));
+    return sub;
+  }
+
+  async updateContactSubmission(id: number, data: Partial<ContactSubmission>): Promise<ContactSubmission | undefined> {
+    const [sub] = await db.update(contactSubmissions).set({ ...data, updatedAt: new Date() }).where(eq(contactSubmissions.id, id)).returning();
+    return sub;
   }
 }
 

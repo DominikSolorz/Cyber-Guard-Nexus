@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replit_integrations/auth/replitAuth";
 import { authStorage } from "./replit_integrations/auth/storage";
 import { onboardingSchema, profileUpdateSchema, validateNIP, validatePESEL } from "@shared/schema";
-import { sendVerificationEmail, generateVerificationCode } from "./email";
+import { sendVerificationEmail, generateVerificationCode, sendContactNotificationEmail } from "./email";
+import { contactFormSchema, CASE_CATEGORY_LABELS } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -888,6 +889,75 @@ Jestem asystentem AI i moje odpowiedzi maja charakter informacyjny. Nie zastepuj
     const deleted = await storage.deleteHearing(id, getUserId(req));
     if (!deleted) return res.status(404).json({ message: "Termin nie znaleziony" });
     res.json({ message: "Termin usuniety" });
+  });
+
+  app.post("/api/contact", upload.single("attachment"), async (req, res) => {
+    try {
+      const parsed = contactFormSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Nieprawidlowe dane formularza", errors: parsed.error.flatten().fieldErrors });
+      }
+
+      const data: any = { ...parsed.data };
+
+      if (req.file) {
+        data.attachmentName = req.file.originalname;
+        data.attachmentPath = req.file.path;
+        data.attachmentType = req.file.mimetype;
+        data.attachmentSize = req.file.size;
+      }
+
+      const submission = await storage.createContactSubmission(data);
+
+      sendContactNotificationEmail({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        senderType: data.senderType,
+        category: data.category,
+        caseCategory: data.caseCategory,
+        subject: data.subject,
+        description: data.description,
+        priority: data.priority,
+        attachmentName: data.attachmentName,
+      }).catch(err => console.error("Failed to send contact notification:", err));
+
+      res.status(201).json({ message: "Zgloszenie zostalo wyslane pomyslnie", id: submission.id });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/admin/contact-submissions", isAuthenticated, requireAdmin, async (_req, res) => {
+    const submissions = await storage.getAllContactSubmissions();
+    res.json(submissions);
+  });
+
+  app.get("/api/admin/contact-submissions/:id", isAuthenticated, requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const submission = await storage.getContactSubmissionById(id);
+    if (!submission) return res.status(404).json({ message: "Zgloszenie nie znalezione" });
+    res.json(submission);
+  });
+
+  app.patch("/api/admin/contact-submissions/:id", isAuthenticated, requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { status, adminNotes } = req.body;
+    const updateData: any = {};
+    if (status !== undefined) updateData.status = status;
+    if (adminNotes !== undefined) updateData.adminNotes = adminNotes;
+    const submission = await storage.updateContactSubmission(id, updateData);
+    if (!submission) return res.status(404).json({ message: "Zgloszenie nie znalezione" });
+    res.json(submission);
+  });
+
+  app.get("/api/admin/contact-submissions/:id/attachment", isAuthenticated, requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const submission = await storage.getContactSubmissionById(id);
+    if (!submission || !submission.attachmentPath) return res.status(404).json({ message: "Brak zalacznika" });
+    if (!fs.existsSync(submission.attachmentPath)) return res.status(404).json({ message: "Plik nie istnieje" });
+    res.download(submission.attachmentPath, submission.attachmentName || "attachment");
   });
 
   const httpServer = createServer(app);
