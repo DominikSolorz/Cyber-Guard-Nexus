@@ -3,4 +3,41 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
-*.tar.gz.config/\n.local/
+*.tar.gz
+
+# Environment variables - NIGDY NIE COMMITUJ!
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local config
+.config/
+.local/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Uploads/uploads (user files)
+uploads/
+server/uploads/
+public/uploads/
