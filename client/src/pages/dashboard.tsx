@@ -16,7 +16,8 @@ import {
   Shield, LogOut, FolderPlus, Upload, Search, Trash2, Edit3,
   Folder, FileText, Image, File as FileIcon, ChevronRight,
   MoreVertical, Eye, Home, MessageSquare, Users, Plus,
-  Scale, Briefcase, User, Building2, Settings, Calendar
+  Scale, Briefcase, User, Building2, Settings, Calendar,
+  Download, Printer, Pencil, FileType2
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -400,16 +401,21 @@ function DocumentsPanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [renameFolderId, setRenameFolderId] = useState<number | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState("");
+  const [renameFileId, setRenameFileId] = useState<number | null>(null);
+  const [renameFileName, setRenameFileName] = useState("");
+  const [convertingFileId, setConvertingFileId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const { data: folders = [], isLoading: foldersLoading } = useQuery<FolderType[]>({
+  const { data: folders = [] } = useQuery<FolderType[]>({
     queryKey: ["/api/folders"],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!user,
   });
 
-  const { data: files = [], isLoading: filesLoading } = useQuery<FileType[]>({
+  const { data: files = [] } = useQuery<FileType[]>({
     queryKey: ["/api/files", currentFolderId ? String(currentFolderId) : "root"],
     queryFn: async () => {
       const url = currentFolderId ? `/api/files?folderId=${currentFolderId}` : "/api/files";
@@ -442,9 +448,33 @@ function DocumentsPanel() {
     },
   });
 
+  const renameFolderMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      await apiRequest("PATCH", `/api/folders/${id}`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/folders"] });
+      setRenameFolderId(null);
+      setRenameFolderName("");
+      toast({ title: "Folder zmieniony" });
+    },
+  });
+
   const deleteFolderMutation = useMutation({
     mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/folders/${id}`); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/folders"] }); queryClient.invalidateQueries({ queryKey: ["/api/files"] }); },
+  });
+
+  const renameFileMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      await apiRequest("PATCH", `/api/files/${id}`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/files"] });
+      setRenameFileId(null);
+      setRenameFileName("");
+      toast({ title: "Nazwa pliku zmieniona" });
+    },
   });
 
   const uploadFileMutation = useMutation({
@@ -459,7 +489,7 @@ function DocumentsPanel() {
 
   const deleteFileMutation = useMutation({
     mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/files/${id}`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/files"] }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/files"] }); toast({ title: "Plik usuniety" }); },
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -475,6 +505,59 @@ function DocumentsPanel() {
       uploadFileMutation.mutate(formData);
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDownload = (file: FileType) => {
+    const link = document.createElement("a");
+    link.href = `/api/files/${file.id}/download`;
+    link.download = file.name;
+    link.click();
+  };
+
+  const handlePrint = (file: FileType) => {
+    const printWindow = window.open(`/api/files/${file.id}/download`, "_blank");
+    if (printWindow) {
+      printWindow.onload = () => { printWindow.print(); };
+    }
+  };
+
+  const handleConvert = async (fileId: number, targetFormat: string) => {
+    setConvertingFileId(fileId);
+    try {
+      const res = await fetch(`/api/files/${fileId}/convert?format=${targetFormat}`, { credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Blad konwersji");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const disposition = res.headers.get("Content-Disposition");
+      const filename = disposition?.match(/filename="(.+)"/)?.[1] || `converted.${targetFormat}`;
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Plik skonwertowany i pobrany" });
+    } catch (e: any) {
+      toast({ title: "Blad konwersji", description: e.message, variant: "destructive" });
+    } finally {
+      setConvertingFileId(null);
+    }
+  };
+
+  const getConversionOptions = (type: string) => {
+    const opts: { label: string; format: string }[] = [];
+    if (type.startsWith("image/")) {
+      opts.push({ label: "PDF", format: "pdf" });
+    }
+    if (type === "application/pdf") {
+      opts.push({ label: "JPG", format: "jpg" });
+    }
+    if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      opts.push({ label: "PDF", format: "pdf" });
+    }
+    return opts;
   };
 
   const currentFolders = folders.filter((f) => currentFolderId ? f.parentFolderId === currentFolderId : !f.parentFolderId);
@@ -523,9 +606,29 @@ function DocumentsPanel() {
           <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={!currentFolderId} data-testid="button-upload">
             <Upload className="h-4 w-4 mr-1" />Plik
           </Button>
-          <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple onChange={handleFileUpload} />
+          <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.docx" multiple onChange={handleFileUpload} />
         </div>
       </div>
+
+      <Dialog open={renameFolderId !== null} onOpenChange={(open) => { if (!open) setRenameFolderId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Zmien nazwe folderu</DialogTitle><DialogDescription>Podaj nowa nazwe</DialogDescription></DialogHeader>
+          <Input placeholder="Nowa nazwa" value={renameFolderName} onChange={(e) => setRenameFolderName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && renameFolderName.trim() && renameFolderId && renameFolderMutation.mutate({ id: renameFolderId, name: renameFolderName.trim() })} data-testid="input-rename-folder" />
+          <DialogFooter>
+            <Button onClick={() => renameFolderName.trim() && renameFolderId && renameFolderMutation.mutate({ id: renameFolderId, name: renameFolderName.trim() })} disabled={!renameFolderName.trim()} data-testid="button-rename-folder">Zmien</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renameFileId !== null} onOpenChange={(open) => { if (!open) setRenameFileId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Zmien nazwe pliku</DialogTitle><DialogDescription>Podaj nowa nazwe</DialogDescription></DialogHeader>
+          <Input placeholder="Nowa nazwa" value={renameFileName} onChange={(e) => setRenameFileName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && renameFileName.trim() && renameFileId && renameFileMutation.mutate({ id: renameFileId, name: renameFileName.trim() })} data-testid="input-rename-file" />
+          <DialogFooter>
+            <Button onClick={() => renameFileName.trim() && renameFileId && renameFileMutation.mutate({ id: renameFileId, name: renameFileName.trim() })} disabled={!renameFileName.trim()} data-testid="button-rename-file">Zmien</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {displayFolders.length === 0 && displayFiles.length === 0 ? (
         <div className="text-center py-16">
@@ -544,9 +647,21 @@ function DocumentsPanel() {
                       <Folder className="h-5 w-5 text-primary shrink-0" />
                       <span className="text-sm font-medium truncate">{folder.name}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="shrink-0 invisible group-hover:visible" onClick={() => deleteFolderMutation.mutate(folder.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="shrink-0 invisible group-hover:visible" data-testid={`button-folder-menu-${folder.id}`}>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => { setRenameFolderId(folder.id); setRenameFolderName(folder.name); }} data-testid={`button-rename-folder-${folder.id}`}>
+                          <Pencil className="h-4 w-4 mr-2" /> Zmien nazwe
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => deleteFolderMutation.mutate(folder.id)} data-testid={`button-delete-folder-${folder.id}`}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Usun
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </CardContent>
                 </Card>
               ))}
@@ -554,27 +669,53 @@ function DocumentsPanel() {
           )}
           {displayFiles.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {displayFiles.map((file) => (
-                <Card key={file.id} className="hover-elevate group" data-testid={`card-file-${file.id}`}>
-                  <CardContent className="p-3 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {getFileIcon(file.type)}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{file.name}</p>
-                        <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+              {displayFiles.map((file) => {
+                const convOptions = getConversionOptions(file.type);
+                return (
+                  <Card key={file.id} className="hover-elevate group" data-testid={`card-file-${file.id}`}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {getFileIcon(file.type)}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0 invisible group-hover:visible" data-testid={`button-file-menu-${file.id}`}>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => window.open(`/api/files/${file.id}/download`, "_blank")} data-testid={`button-preview-${file.id}`}>
+                              <Eye className="h-4 w-4 mr-2" /> Podglad
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file)} data-testid={`button-download-${file.id}`}>
+                              <Download className="h-4 w-4 mr-2" /> Pobierz
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePrint(file)} data-testid={`button-print-${file.id}`}>
+                              <Printer className="h-4 w-4 mr-2" /> Drukuj
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setRenameFileId(file.id); setRenameFileName(file.name); }} data-testid={`button-rename-file-${file.id}`}>
+                              <Pencil className="h-4 w-4 mr-2" /> Zmien nazwe
+                            </DropdownMenuItem>
+                            {convOptions.length > 0 && convOptions.map((opt) => (
+                              <DropdownMenuItem key={opt.format} onClick={() => handleConvert(file.id, opt.format)} disabled={convertingFileId === file.id} data-testid={`button-convert-${file.id}-${opt.format}`}>
+                                <FileType2 className="h-4 w-4 mr-2" /> Konwertuj na {opt.label}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuItem className="text-destructive" onClick={() => deleteFileMutation.mutate(file.id)} data-testid={`button-delete-file-${file.id}`}>
+                              <Trash2 className="h-4 w-4 mr-2" /> Usun
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <a href={`/api/files/${file.id}/download`} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="icon" className="shrink-0 invisible group-hover:visible"><Eye className="h-4 w-4" /></Button>
-                      </a>
-                      <Button variant="ghost" size="icon" className="shrink-0 invisible group-hover:visible" onClick={() => deleteFileMutation.mutate(file.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

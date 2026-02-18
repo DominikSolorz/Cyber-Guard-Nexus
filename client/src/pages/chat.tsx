@@ -4,12 +4,12 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Shield, ArrowLeft, Send, Plus, Trash2, MessageSquare, Loader2
+  Shield, ArrowLeft, Send, Plus, Trash2, MessageSquare, Loader2,
+  Paperclip, X, Download, ImageIcon
 } from "lucide-react";
 import type { Conversation, Message } from "@shared/schema";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +21,9 @@ export default function Chat() {
   const [inputValue, setInputValue] = useState("");
   const [streamingContent, setStreamingContent] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: conversations = [], isLoading: convsLoading } = useQuery<Conversation[]>({
@@ -73,20 +75,36 @@ export default function Chat() {
   }, [messages, streamingContent]);
 
   const sendMessage = async () => {
-    if (!inputValue.trim() || !activeConversationId || isStreaming) return;
+    if ((!inputValue.trim() && !attachedFile) || !activeConversationId || isStreaming) return;
 
     const content = inputValue.trim();
     setInputValue("");
     setIsStreaming(true);
     setStreamingContent("");
 
+    const currentFile = attachedFile;
+    setAttachedFile(null);
+
     try {
-      const response = await fetch(`/api/chat/conversations/${activeConversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ content }),
-      });
+      let response: Response;
+
+      if (currentFile) {
+        const formData = new FormData();
+        formData.append("content", content);
+        formData.append("file", currentFile);
+        response = await fetch(`/api/chat/conversations/${activeConversationId}/messages`, {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+      } else {
+        response = await fetch(`/api/chat/conversations/${activeConversationId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ content }),
+        });
+      }
 
       if (!response.ok) throw new Error("Blad wysylania");
 
@@ -127,6 +145,29 @@ export default function Chat() {
     } finally {
       setIsStreaming(false);
     }
+  };
+
+  const renderMessageContent = (content: string) => {
+    const parts = content.split(/(!\[.*?\]\(https?:\/\/[^\)]+\))/g);
+    return parts.map((part, i) => {
+      const imgMatch = part.match(/!\[(.*?)\]\((https?:\/\/[^\)]+)\)/);
+      if (imgMatch) {
+        const [, alt, url] = imgMatch;
+        return (
+          <div key={i} className="my-2">
+            <img src={url} alt={alt} className="max-w-full rounded-md max-h-80 object-contain" />
+            <div className="flex items-center gap-2 mt-1">
+              <a href={url} download target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm" data-testid={`button-download-image-${i}`}>
+                  <Download className="h-3 w-3 mr-1" /> Pobierz
+                </Button>
+              </a>
+            </div>
+          </div>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   if (authLoading) {
@@ -214,9 +255,9 @@ export default function Chat() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <MessageSquare className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">Asystent prawny AI</h3>
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">Asystent AI</h3>
                 <p className="text-sm text-muted-foreground/70 mb-4 max-w-md">
-                  Zadawaj pytania dotyczace prawa, analizy dokumentow lub organizacji spraw.
+                  Pytaj o prawo, analizuj dokumenty, generuj obrazy, lub rozmawiaj na dowolny temat.
                 </p>
                 <Button
                   onClick={() => createConversationMutation.mutate()}
@@ -237,7 +278,15 @@ export default function Chat() {
                   ))
                 ) : messages.length === 0 && !streamingContent ? (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground">Napisz wiadomosc, aby rozpoczac rozmowe.</p>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground mb-3">Napisz wiadomosc lub przeslij plik, aby rozpoczac rozmowe.</p>
+                      <div className="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground/60">
+                        <span className="bg-muted rounded-md px-2 py-1">Pytania prawne</span>
+                        <span className="bg-muted rounded-md px-2 py-1">Analiza obrazow</span>
+                        <span className="bg-muted rounded-md px-2 py-1">Generowanie obrazow</span>
+                        <span className="bg-muted rounded-md px-2 py-1">Dowolne tematy</span>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -254,14 +303,14 @@ export default function Chat() {
                               : "bg-muted text-foreground"
                           }`}
                         >
-                          {msg.content}
+                          {msg.role === "assistant" ? renderMessageContent(msg.content) : msg.content}
                         </div>
                       </div>
                     ))}
                     {streamingContent && (
                       <div className="flex justify-start">
                         <div className="max-w-[80%] rounded-md p-3 text-sm bg-muted text-foreground whitespace-pre-wrap">
-                          {streamingContent}
+                          {renderMessageContent(streamingContent)}
                           <span className="inline-block w-1.5 h-4 bg-primary animate-pulse ml-0.5 align-text-bottom" />
                         </div>
                       </div>
@@ -279,7 +328,41 @@ export default function Chat() {
               </div>
 
               <div className="border-t border-border p-4">
+                {attachedFile && (
+                  <div className="flex items-center gap-2 mb-2 bg-muted rounded-md px-3 py-1.5 text-sm">
+                    {attachedFile.type.startsWith("image/") ? (
+                      <ImageIcon className="h-4 w-4 text-green-500 shrink-0" />
+                    ) : (
+                      <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                    <span className="truncate flex-1">{attachedFile.name}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{(attachedFile.size / 1024).toFixed(1)} KB</span>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAttachedFile(null)} data-testid="button-remove-attachment">
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
                 <div className="flex items-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isStreaming}
+                    data-testid="button-attach-file"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png,.docx,.gif,.webp"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setAttachedFile(f);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                  />
                   <Textarea
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
@@ -290,7 +373,7 @@ export default function Chat() {
                       }
                     }}
                     placeholder="Napisz wiadomosc..."
-                    className="resize-none min-h-[44px] max-h-[120px]"
+                    className="resize-none min-h-[44px] max-h-[120px] flex-1"
                     rows={1}
                     disabled={isStreaming}
                     data-testid="input-chat-message"
@@ -298,7 +381,7 @@ export default function Chat() {
                   <Button
                     size="icon"
                     onClick={sendMessage}
-                    disabled={!inputValue.trim() || isStreaming}
+                    disabled={(!inputValue.trim() && !attachedFile) || isStreaming}
                     data-testid="button-send-message"
                   >
                     <Send className="h-4 w-4" />

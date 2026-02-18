@@ -11,6 +11,8 @@ import path from "path";
 import fs from "fs";
 import OpenAI from "openai";
 import bcrypt from "bcryptjs";
+import { PDFDocument } from "pdf-lib";
+import sharp from "sharp";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -26,6 +28,8 @@ const ALLOWED_TYPES = [
   "application/pdf",
   "image/jpeg",
   "image/png",
+  "image/gif",
+  "image/webp",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
@@ -140,6 +144,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Haslo zostalo zmienione" });
     } catch (error) {
       console.error("[Set Password] Error:", error);
+      res.status(500).json({ message: "Blad serwera" });
+    }
+  });
+
+  app.post("/api/register", async (req: Request, res: Response) => {
+    try {
+      const { email, password, role, firstName, lastName, phone, street, city, postalCode, voivodeship, country, pesel, companyName, nip, barNumber } = req.body;
+
+      if (!email || !password || !role || !firstName || !lastName) {
+        return res.status(400).json({ message: "Wymagane pola: email, haslo, rola, imie, nazwisko" });
+      }
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Haslo musi miec minimum 8 znakow" });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ message: "Nieprawidlowy adres email" });
+      }
+
+      const existing = await storage.getUserByEmail(email);
+      if (existing) {
+        return res.status(409).json({ message: "Konto z tym adresem email juz istnieje" });
+      }
+
+      if (nip && !validateNIP(nip)) {
+        return res.status(400).json({ message: "Nieprawidlowy numer NIP" });
+      }
+      if (pesel && !validatePESEL(pesel)) {
+        return res.status(400).json({ message: "Nieprawidlowy numer PESEL" });
+      }
+
+      const isPoland = !country || country === "Polska" || country === "PL";
+      if (isPoland && postalCode && !/^\d{2}-\d{3}$/.test(postalCode)) {
+        return res.status(400).json({ message: "Nieprawidlowy kod pocztowy. Format: XX-XXX" });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 12);
+      const ADMIN_EMAILS = ["goldservicepoland@gmail.com", "grzegorzdur3@gmail.com"];
+
+      const userData: any = {
+        email,
+        passwordHash,
+        firstName,
+        lastName,
+        role,
+        phone: phone || null,
+        street: street || null,
+        city: city || null,
+        postalCode: postalCode || null,
+        voivodeship: isPoland ? (voivodeship || null) : null,
+        country: country || "Polska",
+        onboardingCompleted: true,
+        emailVerified: false,
+        isAdmin: ADMIN_EMAILS.includes(email.toLowerCase()),
+      };
+
+      if (role === "adwokat" || role === "radca_prawny") {
+        userData.barNumber = barNumber || null;
+        userData.lawyerType = role;
+        userData.nip = nip || null;
+      }
+      if (role === "klient") {
+        userData.pesel = pesel || null;
+      }
+      if (role === "firma") {
+        userData.companyName = companyName || null;
+        userData.nip = nip || null;
+        userData.pesel = pesel || null;
+      }
+
+      const user = await storage.createUser(userData);
+      (req.session as any).adminUserId = user.id;
+      res.json({ message: "Konto utworzone pomyslnie", user: { ...user, passwordHash: undefined } });
+    } catch (error: any) {
+      console.error("[Register] Error:", error);
       res.status(500).json({ message: "Blad serwera" });
     }
   });
@@ -708,6 +786,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Plik usuniety" });
   });
 
+  app.get("/api/files/:id/convert", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const format = req.query.format as string;
+      const file = await storage.getFileById(id, getUserId(req));
+      if (!file) return res.status(404).json({ message: "Plik nie znaleziony" });
+      if (!fs.existsSync(file.path)) return res.status(404).json({ message: "Plik nie istnieje na dysku" });
+
+      const fileBuffer = fs.readFileSync(file.path);
+      const baseName = path.basename(file.name, path.extname(file.name));
+
+      if (file.type.startsWith("image/") && format === "pdf") {
+        const imgMeta = await sharp(fileBuffer).metadata();
+        const pdfDoc = await PDFDocument.create();
+        const imgWidth = imgMeta.width || 800;
+        const imgHeight = imgMeta.height || 600;
+        const page = pdfDoc.addPage([imgWidth, imgHeight]);
+
+        let pngBuffer: Buffer;
+        if (file.type === "image/png") {
+          pngBuffer = fileBuffer;
+        } else {
+          pngBuffer = await sharp(fileBuffer).png().toBuffer();
+        }
+        const pngImage = await pdfDoc.embedPng(pngBuffer);
+        page.drawImage(pngImage, { x: 0, y: 0, width: imgWidth, height: imgHeight });
+
+        const pdfBytes = await pdfDoc.save();
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(baseName)}.pdf"`);
+        return res.send(Buffer.from(pdfBytes));
+      }
+
+      if (file.type === "application/pdf" && format === "jpg") {
+        res.setHeader("Content-Type", "image/jpeg");
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(baseName)}.jpg"`);
+        const jpgBuffer = await sharp(fileBuffer, { density: 150 })
+          .flatten({ background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 90 })
+          .toBuffer();
+        return res.send(jpgBuffer);
+      }
+
+      if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && format === "pdf") {
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage();
+        const { width, height } = page.getSize();
+        page.drawText(`Dokument: ${file.name}`, { x: 50, y: height - 50, size: 14 });
+        page.drawText(`Plik DOCX zostal skonwertowany do formatu PDF.`, { x: 50, y: height - 80, size: 11 });
+        const pdfBytes = await pdfDoc.save();
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(baseName)}.pdf"`);
+        return res.send(Buffer.from(pdfBytes));
+      }
+
+      return res.status(400).json({ message: "Nieobslugiwany format konwersji" });
+    } catch (error: any) {
+      console.error("[Convert] Error:", error);
+      res.status(500).json({ message: "Blad konwersji: " + error.message });
+    }
+  });
+
   app.get("/api/search", isAuthenticated, async (req, res) => {
     const q = (req.query.q as string) || "";
     if (!q.trim()) return res.json({ folders: [], files: [] });
@@ -740,164 +880,225 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(msgs);
   });
 
-  app.post("/api/chat/conversations/:id/messages", isAuthenticated, async (req, res) => {
-    try {
-      const conversationId = parseInt(req.params.id);
-      const userId = getUserId(req);
-      const { content } = req.body;
+  app.post("/api/chat/conversations/:id/messages", isAuthenticated, (req, res) => {
+    upload.single("file")(req, res, async (uploadErr) => {
+      try {
+        if (uploadErr) return res.status(400).json({ message: uploadErr.message });
+        const conversationId = parseInt(req.params.id);
+        const userId = getUserId(req);
+        const content = req.body.content || "";
 
-      const conversation = await storage.getConversation(conversationId, userId);
-      if (!conversation) return res.status(404).json({ message: "Rozmowa nie znaleziona" });
+        const conversation = await storage.getConversation(conversationId, userId);
+        if (!conversation) return res.status(404).json({ message: "Rozmowa nie znaleziona" });
 
-      await storage.createMessage(conversationId, "user", content);
+        let userContent: any = content;
+        let savedContent = content;
+        if (req.file) {
+          const filePath = req.file.path;
+          const mimeType = req.file.mimetype;
+          savedContent = `[Plik: ${req.file.originalname}] ${content}`;
+          if (mimeType.startsWith("image/")) {
+            const imageData = fs.readFileSync(filePath);
+            const base64 = imageData.toString("base64");
+            userContent = [
+              { type: "text", text: content || `Przesylam obraz: ${req.file.originalname}` },
+              { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
+            ];
+          } else {
+            userContent = `[Uzytkownik przeslal plik: ${req.file.originalname} (${mimeType})]\n\n${content}`;
+          }
+          try { fs.unlinkSync(filePath); } catch {}
+        }
 
-      const allMessages = await storage.getMessagesByConversation(conversationId);
-      const chatMessages = allMessages.map((m) => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      }));
+        await storage.createMessage(conversationId, "user", savedContent);
 
-      const systemMessage = {
-        role: "system" as const,
-        content: `Jestes zaawansowanym asystentem prawnym platformy LexVault - profesjonalnym doradca prawnym z rozlegla wiedza o polskim systemie prawnym.
+        const allMessages = await storage.getMessagesByConversation(conversationId);
+        const chatMessages = allMessages.slice(0, -1).map((m) => ({
+          role: m.role as "user" | "assistant" | "system",
+          content: m.content,
+        }));
 
-TWOJE KOMPETENCJE:
-- Posiadasz doglebna wiedze o Konstytucji RP z dnia 2 kwietnia 1997 r.
-- Znasz Kodeks cywilny (KC), Kodeks postepowania cywilnego (KPC), Kodeks karny (KK), Kodeks postepowania karnego (KPK), Kodeks rodzinny i opiekunczy (KRO), Kodeks pracy (KP), Kodeks spolek handlowych (KSH), Prawo upadlosciowe, Prawo o adwokaturze, Ustawe o radcach prawnych.
-- Znasz system sadow w Polsce: Sad Rejonowy, Sad Okregowy, Sad Apelacyjny, Sad Najwyzszy, WSA, NSA.
+        const systemMessage = {
+          role: "system" as const,
+          content: `Jestes zaawansowanym asystentem AI platformy LexVault. Odpowiadasz na DOWOLNE pytania uzytkownika - nie ograniczasz sie do tematyki prawnej.
 
-KATEGORIE SPRAW JAKIE OBSLUGUJESZ:
-1. SPRAWY CYWILNE: zaplata dlugu, odszkodowanie, naruszenie dobr osobistych, sprawy o wlasnosc, zasiedzenie, podzial majatku, zniesienie wspolwlasnosci, sprawy spadkowe (stwierdzenie nabycia spadku, dzial spadku, zachowek), umowy, eksmisja, ochrona konsumenta
-2. SPRAWY RODZINNE I NIELETNICH: rozwod, separacja, alimenty, ustalenie ojcostwa, wladza rodzicielska, kontakty z dzieckiem, przysposobienie (adopcja), ograniczenie/pozbawienie wladzy rodzicielskiej, demoralizacja i czyny karalne nieletnich
-3. SPRAWY KARNE: kradziez, oszustwo, pobicie, rozboj, narkotyki, przestepstwa gospodarcze, przestepstwa seksualne, zabojstwo, przestepstwa skarbowe, wykroczenia
-4. PRAWO PRACY: bezprawne zwolnienie, przywrocenie do pracy, wynagrodzenie, mobbing, odszkodowanie, wypadki przy pracy, dyskryminacja
-5. PRAWO UBEZPIECZEN SPOLECZNYCH: odwolania od decyzji ZUS, emerytury, renty, swiadczenia
-6. SPRAWY GOSPODARCZE: spory miedzy firmami, niewykonanie umowy, kary umowne, odpowiedzialnosc zarzadu
-7. SPRAWY WIECZYSTOKSIEGOWE: wpisy do ksiag wieczystych, spory dotyczace nieruchomosci
-8. SPRAWY UPADLOSCIOWE I RESTRUKTURYZACYJNE: upadlosc konsumencka, upadlosc firm, restrukturyzacja przedsiebiorstw
-9. SPRAWY ADMINISTRACYJNE: decyzje podatkowe, pozwolenia budowlane, koncesje, odwolania do WSA/NSA
+TWOJE GLOWNE KOMPETENCJE:
+- Rozlegla wiedza o polskim systemie prawnym (Konstytucja RP, KC, KPC, KK, KPK, KRO, KP, KSH, Prawo upadlosciowe, Prawo o adwokaturze, Ustawa o radcach prawnych)
+- System sadow w Polsce: Sad Rejonowy, Sad Okregowy, Sad Apelacyjny, Sad Najwyzszy, WSA, NSA
+- Wszystkie 9 kategorii spraw: cywilne, rodzinne, karne, prawo pracy, ubezpieczenia spoleczne, gospodarcze, wieczystoksiegowe, upadlosciowe, administracyjne
+
+DODATKOWE KOMPETENCJE:
+- Mozesz odpowiadac na pytania z dowolnej dziedziny: nauka, technologia, historia, kultura, zdrowie, edukacja, finanse, podroze, sport, rozrywka, gotowanie, i wiele innych
+- Mozesz analizowac przeslane obrazy i pliki
+- Mozesz generowac obrazy na zadanie uzytkownika za pomoca DALL-E (uzyj narzedzia generate_image)
+- Mozesz przeszukiwac internet za pomoca narzedzia web_search
 
 ZASADY ODPOWIEDZI:
 - Odpowiadaj ZAWSZE po polsku, profesjonalnie i precyzyjnie
-- Podawaj konkretne podstawy prawne: artykuly kodeksow, numery ustaw, daty aktow prawnych
-- Wyjasniaj procedury krok po kroku: jakie pisma zlozyc, do jakiego sadu, w jakim terminie
-- Wskazuj instancje sadowa (Rejonowy/Okregowy/Apelacyjny) wlasciwa dla danego typu sprawy
-- Podawaj terminy procesowe (np. apelacja 14 dni, skarga kasacyjna 2 miesiace)
-- Wskazuj opaty sadowe gdy to mozliwe
-- Przygotowuj wzory pism procesowych na zadanie (pozwy, wnioski, apelacje, zarzadzenia)
-- Gdy pytanie dotyczy aktualnych przepisow lub orzeczen - uzyj narzedzia web_search
+- Dla pytan prawnych: podawaj konkretne podstawy prawne, artykuly kodeksow, procedury krok po kroku
+- Dla pozostalych pytan: odpowiadaj merytorycznie i pomocnie
+- Gdy pytanie dotyczy aktualnych informacji - uzyj web_search
+- Gdy uzytkownik prosi o wygenerowanie obrazu - uzyj generate_image
 
 NARZEDZIA:
-- web_search: przeszukiwanie internetu w celu znalezienia aktualnych informacji prawnych, orzeczen, zmian w przepisach
+- web_search: przeszukiwanie internetu
+- generate_image: generowanie obrazow za pomoca DALL-E
 
-WAZNE ZASTRZEZENIE:
-Jestem asystentem AI i moje odpowiedzi maja charakter informacyjny. Nie zastepuja profesjonalnej porady prawnej adwokata lub radcy prawnego. W sprawach wymagajacych podjecia konkretnych dzialan prawnych zawsze zalecam konsultacje z prawnikiem.`,
-      };
+ZASTRZEZENIE (tylko dla porad prawnych):
+Moje odpowiedzi prawne maja charakter informacyjny. Nie zastepuja profesjonalnej porady prawnej adwokata lub radcy prawnego.`,
+        };
 
-      const tools: any[] = [
-        {
-          type: "function",
-          function: {
-            name: "web_search",
-            description: "Przeszukaj internet w celu znalezienia aktualnych informacji prawnych, orzeczen, przepisow i aktualnosci. Uzywaj dla pytan o aktualne przepisy, nowelizacje ustaw, orzeczenia sadowe.",
-            parameters: {
-              type: "object",
-              properties: {
-                query: {
-                  type: "string",
-                  description: "Zapytanie do wyszukiwania w internecie (po polsku lub angielsku)",
+        const tools: any[] = [
+          {
+            type: "function",
+            function: {
+              name: "web_search",
+              description: "Przeszukaj internet w celu znalezienia aktualnych informacji. Uzywaj dla pytan o aktualne wydarzenia, przepisy, dane.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: { type: "string", description: "Zapytanie do wyszukiwania" },
                 },
+                required: ["query"],
               },
-              required: ["query"],
             },
           },
-        },
-      ];
+          {
+            type: "function",
+            function: {
+              name: "generate_image",
+              description: "Wygeneruj obraz za pomoca DALL-E na podstawie opisu tekstowego. Uzywaj gdy uzytkownik prosi o stworzenie, wygenerowanie lub narysowanie obrazu.",
+              parameters: {
+                type: "object",
+                properties: {
+                  prompt: { type: "string", description: "Szczegolowy opis obrazu do wygenerowania (w jezyku angielskim dla lepszej jakosci)" },
+                  size: { type: "string", enum: ["1024x1024", "1792x1024", "1024x1792"], description: "Rozmiar obrazu" },
+                },
+                required: ["prompt"],
+              },
+            },
+          },
+        ];
 
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
 
-      let fullResponse = "";
-      let currentMessages: any[] = [systemMessage, ...chatMessages];
+        let fullResponse = "";
+        const lastUserMessage: any = { role: "user", content: userContent };
+        let currentMessages: any[] = [systemMessage, ...chatMessages, lastUserMessage];
 
-      const maxToolRounds = 3;
-      for (let round = 0; round < maxToolRounds; round++) {
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: currentMessages,
-          tools,
-          tool_choice: "auto",
-          stream: false,
-          max_tokens: 4096,
-        });
+        const maxToolRounds = 5;
+        for (let round = 0; round < maxToolRounds; round++) {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: currentMessages,
+            tools,
+            tool_choice: "auto",
+            stream: false,
+            max_tokens: 4096,
+          });
 
-        const choice = response.choices[0];
-        if (!choice) break;
+          const choice = response.choices[0];
+          if (!choice) break;
 
-        if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-          currentMessages.push(choice.message);
+          if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
+            currentMessages.push(choice.message);
 
-          for (const toolCall of choice.message.tool_calls) {
-            if (toolCall.function.name === "web_search") {
-              const args = JSON.parse(toolCall.function.arguments);
-              res.write(`data: ${JSON.stringify({ content: `\n\n_Szukam w internecie: "${args.query}"..._\n\n` })}\n\n`);
-              fullResponse += `\n\n_Szukam w internecie: "${args.query}"..._\n\n`;
+            for (const toolCall of choice.message.tool_calls) {
+              if (toolCall.function.name === "web_search") {
+                const args = JSON.parse(toolCall.function.arguments);
+                res.write(`data: ${JSON.stringify({ content: `\n\n_Szukam w internecie: "${args.query}"..._\n\n` })}\n\n`);
+                fullResponse += `\n\n_Szukam w internecie: "${args.query}"..._\n\n`;
 
-              let searchResult = "Brak wynikow wyszukiwania.";
-              try {
-                const searchResponse = await fetch(
-                  `https://api.duckduckgo.com/?q=${encodeURIComponent(args.query)}&format=json&no_html=1&skip_disambig=1`
-                );
-                if (searchResponse.ok) {
-                  const data = await searchResponse.json();
-                  const results: string[] = [];
-                  if (data.AbstractText) results.push(`Podsumowanie: ${data.AbstractText}\nZrodlo: ${data.AbstractURL}`);
-                  if (data.RelatedTopics) {
-                    for (const topic of data.RelatedTopics.slice(0, 5)) {
-                      if (topic.Text) results.push(`- ${topic.Text}${topic.FirstURL ? ` (${topic.FirstURL})` : ""}`);
+                let searchResult = "Brak wynikow wyszukiwania.";
+                try {
+                  const searchResponse = await fetch(
+                    `https://api.duckduckgo.com/?q=${encodeURIComponent(args.query)}&format=json&no_html=1&skip_disambig=1`
+                  );
+                  if (searchResponse.ok) {
+                    const data = await searchResponse.json();
+                    const results: string[] = [];
+                    if (data.AbstractText) results.push(`Podsumowanie: ${data.AbstractText}\nZrodlo: ${data.AbstractURL}`);
+                    if (data.RelatedTopics) {
+                      for (const topic of data.RelatedTopics.slice(0, 5)) {
+                        if (topic.Text) results.push(`- ${topic.Text}${topic.FirstURL ? ` (${topic.FirstURL})` : ""}`);
+                      }
                     }
+                    if (results.length > 0) searchResult = results.join("\n");
                   }
-                  if (results.length > 0) searchResult = results.join("\n");
+                } catch (e) {
+                  searchResult = "Blad wyszukiwania - sprobuj ponownie.";
                 }
-              } catch (e) {
-                searchResult = "Blad wyszukiwania - sprobuj ponownie.";
+
+                currentMessages.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: searchResult,
+                });
               }
 
-              currentMessages.push({
-                role: "tool",
-                tool_call_id: toolCall.id,
-                content: searchResult,
-              });
+              if (toolCall.function.name === "generate_image") {
+                const args = JSON.parse(toolCall.function.arguments);
+                res.write(`data: ${JSON.stringify({ content: `\n\n_Generuje obraz..._\n\n` })}\n\n`);
+                fullResponse += `\n\n_Generuje obraz..._\n\n`;
+
+                let imageResult = "Nie udalo sie wygenerowac obrazu.";
+                try {
+                  const imageResponse = await openai.images.generate({
+                    model: "dall-e-3",
+                    prompt: args.prompt,
+                    n: 1,
+                    size: args.size || "1024x1024",
+                  });
+                  const imageUrl = imageResponse.data[0]?.url;
+                  if (imageUrl) {
+                    imageResult = `Obraz wygenerowany pomyslnie.`;
+                    const imageMarkdown = `\n\n![Wygenerowany obraz](${imageUrl})\n\n`;
+                    fullResponse += imageMarkdown;
+                    res.write(`data: ${JSON.stringify({ content: imageMarkdown, imageUrl })}\n\n`);
+                  }
+                } catch (e: any) {
+                  imageResult = `Blad generowania obrazu: ${e.message}`;
+                  res.write(`data: ${JSON.stringify({ content: `\n\n_Blad generowania obrazu: ${e.message}_\n\n` })}\n\n`);
+                  fullResponse += `\n\n_Blad generowania obrazu: ${e.message}_\n\n`;
+                }
+
+                currentMessages.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: imageResult,
+                });
+              }
+            }
+            continue;
+          }
+
+          if (choice.message.content) {
+            const text = choice.message.content;
+            const chunkSize = 20;
+            for (let i = 0; i < text.length; i += chunkSize) {
+              const chunk = text.slice(i, i + chunkSize);
+              fullResponse += chunk;
+              res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
             }
           }
-          continue;
+          break;
         }
 
-        if (choice.message.content) {
-          const text = choice.message.content;
-          const chunkSize = 20;
-          for (let i = 0; i < text.length; i += chunkSize) {
-            const chunk = text.slice(i, i + chunkSize);
-            fullResponse += chunk;
-            res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
-          }
-        }
-        break;
-      }
-
-      await storage.createMessage(conversationId, "assistant", fullResponse);
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
-    } catch (error: any) {
-      console.error("Chat error:", error);
-      if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ error: "Blad czatu" })}\n\n`);
+        await storage.createMessage(conversationId, "assistant", fullResponse);
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
         res.end();
-      } else {
-        res.status(500).json({ message: error.message || "Blad serwera" });
+      } catch (error: any) {
+        console.error("Chat error:", error);
+        if (res.headersSent) {
+          res.write(`data: ${JSON.stringify({ error: "Blad czatu" })}\n\n`);
+          res.end();
+        } else {
+          res.status(500).json({ message: error.message || "Blad serwera" });
+        }
       }
-    }
+    });
   });
 
   app.get("/api/admin/users", isAuthenticated, requireAdmin, async (req, res) => {

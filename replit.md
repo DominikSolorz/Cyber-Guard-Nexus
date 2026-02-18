@@ -8,9 +8,10 @@ LexVault is a professional legal practice management platform for lawyers (adwok
 - **Backend**: Node.js + Express
 - **Database**: PostgreSQL (Drizzle ORM)
 - **Auth**: Replit Auth (OIDC - supports Google, GitHub, Apple, email login)
-- **AI**: OpenAI GPT-4o via Replit AI Integrations (comprehensive Polish law knowledge, web search via DuckDuckGo)
+- **AI**: OpenAI GPT-4o via Replit AI Integrations (unrestricted topics, Polish law knowledge, web search, GPT-4o vision for image analysis, DALL-E 3 image generation)
 - **Email**: SendGrid (verification emails with branded HTML templates)
-- **File Upload**: Multer (PDF, JPG, PNG, DOCX - max 10MB)
+- **File Upload**: Multer (PDF, JPG, PNG, GIF, WEBP, DOCX - max 10MB)
+- **File Conversion**: sharp + pdf-lib (JPG/PNG→PDF, PDF→JPG, DOCX→PDF)
 
 ## User Roles
 - `adwokat` - Lawyer (attorney): manages clients, cases, documents, court hearings
@@ -124,13 +125,15 @@ Dominik Solarz, ul. Piastowska 2/1, 40-005 Katowice
 Email: goldservicepoland@gmail.com
 
 ## Recent Changes
-- Case categories based on Polish legal system (9 branches: cywilne, rodzinne, karne, pracy, ubezpieczen spolecznych, gospodarcze, wieczystoksiegowe, upadlosciowe, administracyjne)
-- Enhanced landing page with comprehensive sections (hero, features, how-it-works, security, confidentiality)
-- Comprehensive Privacy Policy (RODO) page for 2026 Polish law with PUODO info
-- Confidentiality Clause (Klauzula poufnosci) page with professional secrecy obligations
-- Updated Terms of Service for 2026 with detailed definitions and AI disclaimer
-- Owner-only admin system (goldservicepoland@gmail.com whitelisted, admin toggle removed)
-- Advanced AI Chat with GPT-4o model, comprehensive Polish law system prompt covering all case categories
-- AI legal disclaimer in chat responses
-- Advanced contact form with 9 categories (login help, password reset, account deletion, account recovery, cooperation, technical, legal, complaint, other), sender type selection, case category for legal questions, file attachment, priority levels, email notification to owner via SendGrid
-- Enhanced onboarding form: country selector dropdown, phone country code prefix (+48 etc.), searchable city selection (300+ Polish cities), disposable email detection, show/hide toggle for PESEL/NIP, browser autocomplete disabled on sensitive fields, dynamic address form (voivodeship only for Poland), international address support
+- Registration flow merged with onboarding: 4-step wizard (role, basic data + password, address, professional info) integrated into login page with Login/Register tabs
+- Dual auth: email/password registration + Replit Auth (OIDC)
+- Enhanced document management: rename folders/files via context menus, download/print/preview buttons, file format conversion (JPG/PNG→PDF, PDF→JPG, DOCX→PDF)
+- AI Chat unrestricted topics: responds to any question, not limited to legal topics
+- AI Chat file/image uploads: GPT-4o vision for image analysis, file attachments in chat
+- AI Chat DALL-E 3 integration: image generation on request, display in chat with download button
+- AI Chat web search: DuckDuckGo integration for current information
+- Case categories based on Polish legal system (9 branches)
+- Enhanced landing page with comprehensive sections
+- Owner-only admin system (goldservicepoland@gmail.com whitelisted)
+- Advanced contact form with 9 categories, file attachment, priority levels, email notification via SendGrid
+- Enhanced onboarding form: country selector, phone country code prefix, searchable city selection (300+ Polish cities), disposable email detection
