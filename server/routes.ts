@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Podaj email i haslo" });
       }
       const user = await storage.getUserByEmail(email);
-      if (!user || !user.passwordHash) {
+      if (!user || !user.passwordHash || !user.isAdmin) {
         return res.status(401).json({ message: "Nieprawidlowy email lub haslo" });
       }
       const valid = await bcrypt.compare(password, user.passwordHash);
@@ -118,6 +118,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     (req.session as any).adminUserId = undefined;
     req.session.destroy(() => {});
     res.json({ message: "Wylogowano" });
+  });
+
+  app.post("/api/admin-set-password", async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req) || (req.session as any)?.adminUserId;
+      if (!userId) return res.status(401).json({ message: "Nie zalogowany" });
+      const user = await storage.getUserById(userId);
+      if (!user?.isAdmin) return res.status(403).json({ message: "Tylko administratorzy moga zmieniac haslo" });
+      const { currentPassword, newPassword } = req.body;
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "Haslo musi miec minimum 8 znakow" });
+      }
+      if (user.passwordHash) {
+        if (!currentPassword) return res.status(400).json({ message: "Podaj aktualne haslo" });
+        const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!valid) return res.status(401).json({ message: "Nieprawidlowe aktualne haslo" });
+      }
+      const hash = await bcrypt.hash(newPassword, 12);
+      await storage.updateUserPassword(user.id, hash);
+      res.json({ message: "Haslo zostalo zmienione" });
+    } catch (error) {
+      console.error("[Set Password] Error:", error);
+      res.status(500).json({ message: "Blad serwera" });
+    }
   });
 
   const DISPOSABLE_DOMAINS = new Set([
